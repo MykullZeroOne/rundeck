@@ -354,10 +354,10 @@ dependencies {
     runtimeOnly 'org.aspectj:aspectjweaver:1.9.7'
 
     // Database drivers
-    runtimeOnly "com.h2database:h2:2.2.220"
+    runtimeOnly "com.h2database:h2:${h2Version}"
     runtimeOnly "com.microsoft.sqlserver:mssql-jdbc:${mssqlJdbcVersion}"
-    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.8'  // Upgraded for Java 17 compatibility and security fixes
-    runtimeOnly 'org.postgresql:postgresql:42.7.2'
+    runtimeOnly "org.mariadb.jdbc:mariadb-java-client:${mariadbJdbcVersion}"
+    runtimeOnly "org.postgresql:postgresql:${postgresqlJdbcVersion}"
     runtimeOnly('org.rundeck.hibernate:rundeck-oracle-dialect:1.0.1') {
         exclude group: 'org.hibernate', module: 'hibernate-core'
     }
