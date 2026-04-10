@@ -5,7 +5,7 @@
     "strict": false,
     "jsx": "preserve",
     "importHelpers": true,
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "experimentalDecorators": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -32,8 +32,8 @@
   "exclude": [
     "src/library/stories",
     "src/library/components",
-    "src/library/**/*.spec.ts",
-    "src/library/**/*.stories.tsx",
+    "src/**/*.spec.ts",
+    "src/**/*.stories.tsx",
     "node_modules"
   ]
 }

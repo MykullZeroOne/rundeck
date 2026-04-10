@@ -1,0 +1,32 @@
+# Local dev: single-container Rundeck with embedded H2.
+# Build first:  ./build.sh dev
+# Then:         docker compose up
+services:
+  rundeck:
+    image: rundeck:dev
+    platform: linux/arm64
+    ports:
+      - "4440:4440"
+    environment:
+      RUNDECK_GRAILS_URL: http://localhost:4440
+      RUNDECK_SERVER_FORWARDED: "true"
+      # Let the base image use its built-in H2 default — do NOT override
+      # RUNDECK_DATABASE_URL here. Rundeck 5.x ships H2 2.x which rejects the
+      # legacy MVCC=true flag and will fail to start.
+      RUNDECK_STORAGE_PROVIDER_1_TYPE: db
+      RUNDECK_STORAGE_PROVIDER_1_PATH: keys
+      # Cap JVM memory (default is 75% of container RAM)
+      JVM_MAX_RAM_PERCENTAGE: "75"
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 4g
+    # Extra JVM flags passed via entry.sh's "${@}"
+    command: >-
+      -XX:+UseZGC
+    volumes:
+      - rundeck-data:/home/rundeck/server/data
+
+volumes:
+  rundeck-data:

@@ -57,7 +57,6 @@ include	'rundeck-storage',
     'grails-execution-mode-timer',
     'grails-rundeck-data-shared',
     'docker',
-    'functional-test',
     'grails-job-kill-handler',
     'plugins:jsch-plugin',
     'rundeck-data-models'

@@ -1,8 +1,0 @@
-by:
-  urn: project:nodes-test
-for:
-  storage:
-    - match:
-        path: 'keys/project/nodes-test/.*'
-      allow: [read]
-description: Allow access to key storage

@@ -1,8 +1,0 @@
-by:
-  urn: project:openssh-executor-test
-for:
-  storage:
-    - match:
-        path: 'keys/project/openssh-executor-test/.*'
-      allow: [read]
-description: Allow access to key storage

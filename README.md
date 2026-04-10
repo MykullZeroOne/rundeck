@@ -1,4 +1,4 @@
-<p align="center">
+ok image<p align="center">
 <a href="https://www.rundeck.com">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://www.rundeck.com/hubfs/Pager%20Duty%20Branding/RundeckbyPagerDutyDM.svg" width="300">
@@ -26,7 +26,7 @@
 <br />
 
 Rundeck by PagerDuty is an open source runbook automation service with a web console, command line tools and a WebAPI. It lets you easily standardize tasks to improve operational quality by deploying automation across a set of nodes.
-
+how much of a lift would it be to 
 - [Visit the Website](https://www.rundeck.com)
 
 - [Read the latest documentation](https://docs.rundeck.com/docs/)
