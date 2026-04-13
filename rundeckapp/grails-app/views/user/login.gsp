@@ -118,7 +118,7 @@
                           <g:set var="logoImage" value="${"static/img/${g.appLogo()}"}"/>
                           <g:set var="titleLink" value="${cfg.getString(config: "gui.titleLink")}"/>
                           <a href="${titleLink ? enc(attr:titleLink) : g.createLink(uri: '/')}" title="Home">
-                            <asset:image src="${logoImage}" alt="Rundeck" style="width: 200px;" onload="SVGInject(this)"/>
+                            <asset:image src="${logoImage}" alt="RUNDeck by REV FCU" style="width: 200px;"/>
                           </a>
 %{--                          <asset:image src="${g.message(code: 'app.login.logo')}"/>--}%
                           <g:set var="userDefinedLogo" value="${cfg.getString(config: "gui.logo")}"/>
