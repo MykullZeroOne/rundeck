@@ -9,7 +9,10 @@
             http://www.ehcache.org/schema/ehcache-107-ext-3.0.xsd">
 
     <service>
-        <jsr107:defaults enable-statistics="true" default-template="default" />
+        <!-- Disable JMX statistics registration at startup — each MBean registration
+             is expensive and Hibernate creates 50+ cache regions. Enable per-cache
+             if needed for monitoring. -->
+        <jsr107:defaults enable-statistics="false" enable-management="false" default-template="default" />
     </service>
 
     <!-- Default cache template -->
@@ -19,7 +22,7 @@
         </expiry>
 
         <resources>
-            <heap unit="entries">20000</heap>
+            <heap unit="entries">5000</heap>
         </resources>
 
     </cache-template>

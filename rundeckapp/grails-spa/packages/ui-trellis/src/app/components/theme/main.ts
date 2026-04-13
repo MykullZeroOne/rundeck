@@ -7,3 +7,5 @@ import "../../../library/theme/typography.css";
 import "../../../library/theme/images/logos/rundeck-by-pd.svg";
 import "../../../library/theme/images/logos/rundeck-combination.svg";
 import "../../../library/theme/images/logos/pagerduty-full-logo.svg";
+import "../../../library/theme/images/logos/rundeck-revfcu-light.png";
+import "../../../library/theme/images/logos/rundeck-revfcu-dark.png";

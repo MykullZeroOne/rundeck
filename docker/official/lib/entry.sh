@@ -70,8 +70,15 @@ if [[ -n "${EXEC_CMD}" ]] ; then
     exec $EXEC_CMD
 fi
 
+# Use CDS archive if available for faster startup
+CDS_OPTS=""
+if [[ -f "${HOME}/rundeck.jsa" ]]; then
+    CDS_OPTS="-Xshare:auto -XX:SharedArchiveFile=${HOME}/rundeck.jsa"
+fi
+
 exec java \
     -XX:MaxRAMPercentage="${JVM_MAX_RAM_PERCENTAGE}" \
+    ${CDS_OPTS} \
     -Dlog4j.configurationFile="${HOME}/server/config/log4j2.properties" \
     -Dlogging.config="file:${HOME}/server/config/log4j2.properties" \
     -Dloginmodule.conf.name=jaas-loginmodule.conf \
