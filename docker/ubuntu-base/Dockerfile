@@ -1,28 +1,9 @@
-# Build remco from org fork with CVE fixes applied
-###################################################
-FROM golang:1.24.6 AS remco
-
-# Pinned to rundeck/remco HEAD (2026-01-27).
-# Forked from HeavyHorst/remco; includes CVE fixes from upstream
-# PR #115 (https://github.com/HeavyHorst/remco/pull/115) for
-# CVE-2025-47914, CVE-2025-61727, CVE-2026-33186 (grpc v1.79.3).
-ENV REMCO_COMMIT=dd15086e958dd83f334fb857ecd29bb1615fa179
-
-RUN git clone https://github.com/rundeck/remco.git /tmp/remco && \
-    cd /tmp/remco && \
-    git checkout $REMCO_COMMIT && \
-    GOTOOLCHAIN=auto go build -o /go/bin/remco ./cmd/remco
-
 # Build base container
 ######################
-FROM ubuntu:22.04
+ARG JAVA_RUNTIME_IMAGE=eclipse-temurin:25-jre-noble
+FROM ${JAVA_RUNTIME_IMAGE}
 
 ARG TARGETARCH
-
-# The required JRE version args
-ARG JRE_VERSION
-RUN echo "Image JRE: ${JRE_VERSION}"
-RUN if [ -z "$JRE_VERSION" ]; then echo "Error: JRE_VERSION is not set"; exit 1; fi
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=C.UTF-8
@@ -41,7 +22,6 @@ RUN apt-get update && \
         gnupg2 \
         ssh-client \
         sudo \
-        $JRE_VERSION \
         uuid-runtime \
         wget \
         unzip && \
@@ -52,7 +32,7 @@ RUN apt-get update && \
 RUN adduser --gid 0 --shell /bin/bash --home /home/rundeck --gecos "" --disabled-password rundeck && \
     chmod 0775 /home/rundeck && \
     passwd -d rundeck && \
-    addgroup rundeck sudo && \
+    usermod -aG sudo rundeck && \
     chmod g+w /etc/passwd
 
 # Install Tini
@@ -63,8 +43,8 @@ RUN curl -sSL https://github.com/krallin/tini/releases/download/v${TINI_VERSION}
     gpg --batch --verify /tini.asc /tini && \
     chmod +x /tini
 
-# Install Remco
-COPY --from=remco /go/bin/remco /usr/local/bin/remco
+# Install Remco (pre-built on host)
+COPY remco /usr/local/bin/remco
 
 USER rundeck
 
