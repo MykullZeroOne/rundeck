@@ -15,7 +15,7 @@ class TaskService {
      * Scheduled executor for retries
      */
     def ListeningScheduledExecutorService scheduledExecutor = MoreExecutors.listeningDecorator(
-            Executors.newScheduledThreadPool(5)
+            Executors.newScheduledThreadPool(10)
     )
 
     def schedule(long delay, String id = null, TimeUnit unit = TimeUnit.SECONDS, Closure clos) {

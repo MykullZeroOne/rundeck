@@ -1,6 +1,6 @@
 import PrimeVue from 'primevue/config';
 import Tooltip from 'primevue/tooltip';
-import Lara from '@primeuix/themes/lara';
+import Aura from '@primeuix/themes/aura';
 import type { App } from 'vue';
 
 export interface PrimeVueConfigOptions {
@@ -18,7 +18,7 @@ export function configurePrimeVue(
 
   app.use(PrimeVue, {
     theme: {
-      preset: Lara,
+      preset: Aura,
       options: {
         prefix: 'p',
         cssLayer: true,

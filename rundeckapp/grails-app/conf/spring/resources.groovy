@@ -564,20 +564,22 @@ beans={
         concurrencyLimit = 1 + application.config.getProperty("rundeck.execution.logs.fileStorage.retrievalTasks.concurrencyLimit", Integer.class, 5)
     }
     logFileStorageTaskExecutor(SimpleAsyncTaskExecutor, "LogFileStorageTask") {
-        concurrencyLimit = 1 + application.config.getProperty("rundeck.execution.logs.fileStorage.storageTasks.concurrencyLimit", Integer.class, 10)
+        virtualThreads = true
+        concurrencyLimit = 1 + application.config.getProperty("rundeck.execution.logs.fileStorage.storageTasks.concurrencyLimit", Integer.class, 30)
     }
     logFileStorageTaskScheduler(ThreadPoolTaskScheduler) {
         threadNamePrefix="LogFileStorageScheduledTask"
-        poolSize= application.config.getProperty("rundeck.execution.logs.fileStorage.scheduledTasks.poolSize", Integer.class, 5)
+        poolSize= application.config.getProperty("rundeck.execution.logs.fileStorage.scheduledTasks.poolSize", Integer.class, 10)
 
     }
     logFileStorageDeleteRemoteTask(ThreadPoolTaskExecutor) {
         threadNamePrefix="LogFileStorageDeleteRemoteTask"
-        maxPoolSize= application.config.getProperty("rundeck.execution.logs.fileStorage.removeTasks.poolSize", Integer.class, 5)
+        maxPoolSize= application.config.getProperty("rundeck.execution.logs.fileStorage.removeTasks.poolSize", Integer.class, 10)
 
     }
     nodeTaskExecutor(SimpleAsyncTaskExecutor,"NodeService-SourceLoader") {
-        concurrencyLimit = application.config.getProperty("rundeck.nodeService.concurrencyLimit", Integer.class, 25) //-1 for unbounded
+        virtualThreads = true
+        concurrencyLimit = application.config.getProperty("rundeck.nodeService.concurrencyLimit", Integer.class, 50) //-1 for unbounded
     }
     //alternately use ThreadPoolTaskExecutor ...
 //    nodeTaskExecutor(ThreadPoolTaskExecutor) {

@@ -13,3 +13,25 @@
 .rd-with-pd-logo__text {
   fill: var(--font-color);
 }
+
+/* REV FCU branding overrides */
+.revfcu-logo {
+  height: 40px;
+  width: auto;
+}
+
+.login-container {
+  background: var(--background-color);
+  color: var(--font-color);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-tagline {
+  margin-top: 8px;
+  font-size: 0.875rem;
+  color: var(--text-secondary-color);
+  letter-spacing: 0.04em;
+}

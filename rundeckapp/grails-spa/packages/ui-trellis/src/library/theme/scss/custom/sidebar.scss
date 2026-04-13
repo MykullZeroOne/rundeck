@@ -1,22 +1,21 @@
 .sidebar {
   .logo {
-    background-color: #000000;
+    background-color: var(--sidebar-background-color);
 
     a.home {
-      font-family: "Futura";
+      font-family: "Inter", "Helvetica Neue", sans-serif;
       text-transform: uppercase;
       color: #ffffff;
-      padding: 15px 15px 15px 32px;
+      padding: 10px 15px 10px 20px;
       font-size: 18px;
       line-height: 20px;
       height: 50px;
-      background-image: url("../images/logos/rundeck-text.png");
-      background-size: 50%;
+      background-image: url("../images/logos/rundeck-revfcu-dark.png");
+      background-size: contain;
       background-repeat: no-repeat;
       width: 100%;
       display: block;
-      background-position-y: 15px;
-      background-position-x: 65px;
+      background-position: center left 20px;
     }
 
     .navbar-minimize {

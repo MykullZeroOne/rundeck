@@ -36,6 +36,9 @@ logging:
         com.zaxxer.hikari.pool.HikariPool: DEBUG
 
 spring:
+    threads:
+        virtual:
+            enabled: true
     liquibase:
         enabled: false  # Temporarily disabled for Grails 7 testing
     cloud:

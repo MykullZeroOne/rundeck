@@ -66,7 +66,7 @@ class AuthorizationService implements AuthManager, InitializingBean, EventBusAwa
     /**
      * Scheduled executor for retries
      */
-    private ExecutorService executor = Executors.newFixedThreadPool(2)
+    private ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()
 
     /**
      * Get the top-level system authorization
