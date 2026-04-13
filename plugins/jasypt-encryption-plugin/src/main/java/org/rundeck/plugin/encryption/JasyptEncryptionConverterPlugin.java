@@ -26,10 +26,6 @@ import com.dtolabs.rundeck.plugins.descriptions.SelectValues;
 import com.dtolabs.rundeck.plugins.storage.StorageConverterPlugin;
 import com.dtolabs.utils.Streams;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.jasypt.encryption.pbe.PBEByteEncryptor;
-import org.jasypt.encryption.pbe.StandardPBEByteEncryptor;
-import org.jasypt.encryption.pbe.config.EnvironmentPBEConfig;
-import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 import org.rundeck.storage.api.HasInputStream;
 import org.rundeck.storage.api.Path;
 import org.rundeck.storage.data.DataUtil;
@@ -135,227 +131,71 @@ public class JasyptEncryptionConverterPlugin implements StorageConverterPlugin {
                     description = "(optional)" )
     String keyObtentionIterationsSysPropName;
 
-    private volatile StandardPBEByteEncryptor standardPBEByteEncryptor = null;
+    private static final int DEFAULT_KEY_OBTENTION_ITERATIONS = 1000;
+
+    private volatile BouncyCastlePBEEncryptor encryptor = null;
 
     public JasyptEncryptionConverterPlugin() {
     }
 
-    private StandardPBEByteEncryptor getEncryptor() {
-        if (null == standardPBEByteEncryptor) {
+    private BouncyCastlePBEEncryptor getEncryptor() {
+        if (null == encryptor) {
             synchronized (this) {
-                if (null == standardPBEByteEncryptor) {
-                    EnvironmentPBEConfig config = new EnvironmentPBEConfig();
-
-                    addPasswordValue(config, password, passwordEnvVarName, passwordSysPropName, true, "password");
-
+                if (null == encryptor) {
+                    String resolvedPassword = resolveValue(password, passwordEnvVarName, passwordSysPropName, true, "password");
+                    // Clear password fields after reading
                     password = null;
                     passwordEnvVarName = null;
                     passwordSysPropName = null;
 
-                    StandardPBEByteEncryptor encryptor = new StandardPBEByteEncryptor();
+                    String resolvedAlgorithm;
                     if ("strong".equals(encryptorType)) {
                         logger.debug("JasyptEncryptionConverterPlugin use STRONG type");
-                        config.setAlgorithm("PBEWithMD5AndTripleDES");
+                        resolvedAlgorithm = "PBEWithMD5AndTripleDES";
                     } else if ("basic".equals(encryptorType)) {
                         logger.debug("JasyptEncryptionConverterPlugin use BASIC type");
-                        config.setAlgorithm("PBEWithMD5AndDES");
+                        resolvedAlgorithm = "PBEWithMD5AndDES";
                     } else if ("custom".equals(encryptorType)) {
                         logger.debug("JasyptEncryptionConverterPlugin use CUSTOM type");
-
-                        addAlgorithmValue(
-                                config,
-                                algorithm,
-                                algorithmEnvVarName,
-                                algorithmSysPropName,
-                                false,
-                                "algorithm"
-                        );
+                        resolvedAlgorithm = resolveValue(algorithm, algorithmEnvVarName, algorithmSysPropName, true, "algorithm");
                     } else {
-
-                        throw new IllegalStateException(
-                                "encryptorType is required"
-                        );
+                        throw new IllegalStateException("encryptorType is required");
                     }
 
-                    if (!addProviderClassNameValue(
-                            config,
-                            providerClassName,
-                            providerClassNameEnvVarName,
-                            providerClassNameSysPropName,
-                            false,
-                            "providerClassName"
-                    )) {
-
-                        addProviderNameValue(
-                                config,
-                                provider,
-                                providerEnvVarName,
-                                providerSysPropName,
-                                false,
-                                "provider"
-                        );
+                    int iterations = DEFAULT_KEY_OBTENTION_ITERATIONS;
+                    String iterStr = resolveValue(keyObtentionIterations, keyObtentionIterationsEnvVarName, keyObtentionIterationsSysPropName, false, "keyObtentionIterations");
+                    if (iterStr != null) {
+                        iterations = Integer.parseInt(iterStr);
                     }
 
-
-                    addKeyObtentionIterationsValue(
-                            config,
-                            keyObtentionIterations,
-                            keyObtentionIterationsEnvVarName,
-                            keyObtentionIterationsSysPropName,
-                            false,
-                            "keyObtentionIterations"
-                    );
-                    encryptor.setConfig(config);
-                    logger.debug("JasyptEncryptionConverterPlugin configured");
-
-                    standardPBEByteEncryptor = encryptor;
+                    encryptor = new BouncyCastlePBEEncryptor(resolvedAlgorithm, resolvedPassword, iterations);
+                    logger.debug("JasyptEncryptionConverterPlugin configured (using BouncyCastle direct)");
                 }
             }
         }
-        return standardPBEByteEncryptor;
+        return encryptor;
     }
 
-    private boolean addPasswordValue(
-            final EnvironmentPBEConfig config,
-            final String directValue,
-            final String envVarValue,
-            final String sysPropValue,
-            final boolean required,
-            final String description
-    )
-    {
+    /**
+     * Resolves a config value from direct value, environment variable, or system property.
+     */
+    private String resolveValue(String directValue, String envVarName, String sysPropName, boolean required, String description) {
         if (notBlank(directValue)) {
-            config.setPassword(directValue);
-        } else if (notBlank(envVarValue)) {
-            config.setPasswordEnvName(envVarValue);
-        } else if (notBlank(sysPropValue)) {
-            config.setPasswordSysPropertyName(sysPropValue);
-            System.clearProperty(sysPropValue);
-        } else if (required) {
-            throw new IllegalStateException(
-                    description + ", " + description + "EnvVarName, or " + description + "SysPropName is required"
-            );
-        } else {
-            logger.info("  No value provided, not required");
-            return false;
+            return directValue;
+        } else if (notBlank(envVarName)) {
+            String val = System.getenv(envVarName);
+            if (notBlank(val)) return val;
+        } else if (notBlank(sysPropName)) {
+            String val = System.getProperty(sysPropName);
+            if (notBlank(val)) {
+                System.clearProperty(sysPropName);
+                return val;
+            }
         }
-        return true;
-    }
-
-    private boolean addAlgorithmValue(
-            final EnvironmentPBEConfig config,
-            final String directValue,
-            final String envVarValue,
-            final String sysPropValue,
-            final boolean required,
-            final String description
-    )
-    {
-        if (notBlank(directValue)) {
-            logger.debug("JasyptEncryptionConverterPlugin use value for " + description);
-            config.setAlgorithm(directValue);
-        } else if (notBlank(envVarValue)) {
-            logger.debug("JasyptEncryptionConverterPlugin use env var for " + description);
-            config.setAlgorithmEnvName(envVarValue);
-        } else if (notBlank(sysPropValue)) {
-            config.setAlgorithmSysPropertyName(sysPropValue);
-            logger.debug("JasyptEncryptionConverterPlugin use sys prop for " + description);
-            System.clearProperty(sysPropValue);
-        } else if (required) {
-            throw new IllegalStateException(
-                    description + ", " + description + "EnvVarName, or " + description + "SysPropName is required"
-            );
-        } else {
-            return false;
+        if (required) {
+            throw new IllegalStateException(description + ", " + description + "EnvVarName, or " + description + "SysPropName is required");
         }
-        return true;
-    }
-
-    private boolean addProviderNameValue(
-            final EnvironmentPBEConfig config,
-            final String directValue,
-            final String envVarValue,
-            final String sysPropValue,
-            final boolean required,
-            final String description
-    )
-    {
-        if (notBlank(directValue)) {
-            logger.debug("JasyptEncryptionConverterPlugin use value for " + description);
-            config.setProviderName(directValue);
-        } else if (notBlank(envVarValue)) {
-            logger.debug("JasyptEncryptionConverterPlugin use env var for " + description);
-            config.setProviderNameEnvName(envVarValue);
-        } else if (notBlank(sysPropValue)) {
-            config.setProviderNameSysPropertyName(sysPropValue);
-            logger.debug("JasyptEncryptionConverterPlugin use sys prop for " + description);
-            System.clearProperty(sysPropValue);
-        } else if (required) {
-            throw new IllegalStateException(
-                    description + ", " + description + "EnvVarName, or " + description + "SysPropName is required"
-            );
-        } else {
-            return false;
-        }
-        return true;
-    }
-
-    private boolean addProviderClassNameValue(
-            final EnvironmentPBEConfig config,
-            final String directValue,
-            final String envVarValue,
-            final String sysPropValue,
-            final boolean required,
-            final String description
-    )
-    {
-        if (notBlank(directValue)) {
-            logger.debug("JasyptEncryptionConverterPlugin use value for " + description);
-            config.setProviderClassName(directValue);
-        } else if (notBlank(envVarValue)) {
-            logger.debug("JasyptEncryptionConverterPlugin use env var for " + description);
-            config.setProviderClassNameEnvName(envVarValue);
-        } else if (notBlank(sysPropValue)) {
-            config.setProviderClassNameSysPropertyName(sysPropValue);
-            logger.debug("JasyptEncryptionConverterPlugin use sys prop for " + description);
-            System.clearProperty(sysPropValue);
-        } else if (required) {
-            throw new IllegalStateException(
-                    description + ", " + description + "EnvVarName, or " + description + "SysPropName is required"
-            );
-        } else {
-            return false;
-        }
-        return true;
-    }
-
-    private boolean addKeyObtentionIterationsValue(
-            final EnvironmentPBEConfig config,
-            final String directValue,
-            final String envVarValue,
-            final String sysPropValue,
-            final boolean required,
-            final String description
-    )
-    {
-        if (notBlank(directValue)) {
-            logger.debug("JasyptEncryptionConverterPlugin use value for " + description);
-            config.setKeyObtentionIterations(directValue);
-        } else if (notBlank(envVarValue)) {
-            logger.debug("JasyptEncryptionConverterPlugin use env var for " + description);
-            config.setKeyObtentionIterationsEnvName(envVarValue);
-        } else if (notBlank(sysPropValue)) {
-            config.setKeyObtentionIterationsSysPropertyName(sysPropValue);
-            logger.debug("JasyptEncryptionConverterPlugin use sys prop for " + description);
-            System.clearProperty(sysPropValue);
-        } else if (required) {
-            throw new IllegalStateException(
-                    description + ", " + description + "EnvVarName, or " + description + "SysPropName is required"
-            );
-        } else {
-            return false;
-        }
-        return true;
+        return null;
     }
 
     private boolean notBlank(final String value) {
@@ -400,44 +240,11 @@ public class JasyptEncryptionConverterPlugin implements StorageConverterPlugin {
     }
 
     private HasInputStream encrypt(final HasInputStream hasInputStream) {
-        try {
-            return new EncryptStream(hasInputStream, getEncryptor());
-        } catch (Exception e) {
-            String errorMsg = "Encryption failed. This usually means the encryption password is not set, " +
-                "BouncyCastle is not available, or the configured algorithm is incompatible. " +
-                "Check rundeck-config.properties for encryption settings: " +
-                "rundeck.storage.converter.1.config.password (for keys) and " +
-                "rundeck.config.storage.converter.1.config.password (for project config).";
-            
-            if (algorithm != null) {
-                errorMsg += " Algorithm: " + algorithm + ".";
-            }
-            if (provider != null) {
-                errorMsg += " Provider: " + provider + ".";
-            }
-            
-            logger.error(errorMsg, e);
-            throw new RuntimeException(errorMsg, e);
-        }
+        return new EncryptStream(hasInputStream, getEncryptor());
     }
 
     private HasInputStream decrypt(final HasInputStream hasInputStream) {
-        try {
-            return new DecryptStream(hasInputStream, getEncryptor());
-        } catch (Exception e) {
-            String errorMsg = "Decryption failed. This usually means the wrong encryption password was provided, " +
-                "or the data was encrypted with a different algorithm/provider.";
-            
-            if (algorithm != null) {
-                errorMsg += " Algorithm: " + algorithm + ".";
-            }
-            if (provider != null) {
-                errorMsg += " Provider: " + provider + ".";
-            }
-            
-            logger.error(errorMsg, e);
-            throw new RuntimeException(errorMsg, e);
-        }
+        return new DecryptStream(hasInputStream, getEncryptor());
     }
 
 
@@ -450,9 +257,9 @@ public class JasyptEncryptionConverterPlugin implements StorageConverterPlugin {
 
     private static class EncryptStream implements HasInputStream {
         private final HasInputStream hasInputStream;
-        private PBEByteEncryptor encryptor;
+        private final BouncyCastlePBEEncryptor encryptor;
 
-        private EncryptStream(HasInputStream hasInputStream, PBEByteEncryptor encryptor) {
+        private EncryptStream(HasInputStream hasInputStream, BouncyCastlePBEEncryptor encryptor) {
             this.hasInputStream = hasInputStream;
             this.encryptor = encryptor;
         }
@@ -470,9 +277,9 @@ public class JasyptEncryptionConverterPlugin implements StorageConverterPlugin {
 
     private static class DecryptStream implements HasInputStream {
         private final HasInputStream hasInputStream;
-        private PBEByteEncryptor encryptor;
+        private final BouncyCastlePBEEncryptor encryptor;
 
-        private DecryptStream(HasInputStream hasInputStream, PBEByteEncryptor encryptor) {
+        private DecryptStream(HasInputStream hasInputStream, BouncyCastlePBEEncryptor encryptor) {
             this.hasInputStream = hasInputStream;
             this.encryptor = encryptor;
         }
@@ -481,7 +288,7 @@ public class JasyptEncryptionConverterPlugin implements StorageConverterPlugin {
         public InputStream getInputStream() throws IOException {
             try {
                 return new ByteArrayInputStream(encryptor.decrypt(getBytes(hasInputStream.getInputStream())));
-            } catch (EncryptionOperationNotPossibleException e) {
+            } catch (RuntimeException e) {
                 throw new IOException("Decryption failed.", e);
             }
         }

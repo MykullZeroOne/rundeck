@@ -19,7 +19,6 @@ buildscript {
 }
 plugins {
     id "org.springframework.boot" version "${springBootVersion}"
-    id "org.dvaske.gradle.git-build-info"
     id "com.github.node-gradle.node" version "7.0.1"
     id "java-library"
     id "war"
@@ -53,11 +52,7 @@ configurations.all {
                 details.useVersion springIntegrationVersion
                 details.because 'Spring Boot 3.5.8 requires Spring Integration 6.x'
             }
-            // Force BouncyCastle 1.79 (Spring Boot 3.5+ BOM manages BC and uses 1.80 which breaks Jasypt)
-            if (details.requested.group == 'org.bouncycastle') {
-                details.useVersion bouncyCastleVersion
-                details.because 'BC 1.80 breaks Jasypt encryption - staying on 1.79 until migration'
-            }
+            // BouncyCastle version managed by Spring Boot BOM (Jasypt removed, no pin needed)
             // Force commons-lang3 3.20.0 (prevent duplicate versions in WAR)
             if (details.requested.group == 'org.apache.commons' && details.requested.name == 'commons-lang3') {
                 details.useVersion commonsLang3Version
@@ -343,7 +338,7 @@ dependencies {
     compileOnly "io.micronaut:micronaut-inject-groovy:${micronautVersion}"
     implementation "io.micronaut:micronaut-core"
 
-    runtimeOnly 'org.aspectj:aspectjweaver:1.9.7'
+    runtimeOnly 'org.aspectj:aspectjweaver'
 
     // Database drivers
     runtimeOnly "com.h2database:h2:2.2.220"
@@ -377,7 +372,7 @@ dependencies {
     testRuntimeOnly "org.seleniumhq.selenium:selenium-remote-driver:${seleniumJavaVersion}"
     testRuntimeOnly "org.seleniumhq.selenium:selenium-api:${seleniumJavaVersion}"
     testRuntimeOnly "org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}"
-    testRuntimeOnly 'org.aspectj:aspectjweaver:1.9.7'
+    testRuntimeOnly 'org.aspectj:aspectjweaver'
     testRuntimeOnly 'org.junit.vintage:junit-vintage-engine'
     // transitive dependencies constraints.
     constraints {
@@ -449,11 +444,10 @@ bootRun {
         }
     }
     dependsOn 'copySpa', copyRuntimeLibs, 'vendorAssetDeps', 'assetCompile'
-    main 'rundeckapp.Application'
+    mainClass = 'rundeckapp.Application'
     ignoreExitValue true
     jvmArgs(
             '-Dspring.output.ansi.enabled=always',
-            '-noverify',
             '-XX:TieredStopAtLevel=1',
             '-Xmx4096m',
             '-XX:MaxMetaspaceSize=1024m')
@@ -783,7 +777,6 @@ task vendorAssetDeps(type: NpmTask) { it ->
     def baseDir = "${projectDir}/grails-app/assets/javascripts"
 
     it.inputs.file "${baseDir}/_package-manager/package.json"
-    it.inputs.file "${baseDir}/_package-manager/package-lock.json"
     it.inputs.file "${baseDir}/_package-manager/webpack.mix.js"
 
     it.outputs.dir "${baseDir}/vendor"
@@ -796,10 +789,6 @@ task vendorAssetDeps(type: NpmTask) { it ->
 
     execOverrides {
         it.workingDir = "${baseDir}/_package-manager"
-        def token = project.findProperty('CLOUDSMITH_NPM_TOKEN') ?: System.getenv('CLOUDSMITH_NPM_TOKEN')
-        if (token) {
-            it.environment('CLOUDSMITH_NPM_TOKEN', token)
-        }
     }
 }
 
@@ -824,7 +813,9 @@ task copyCompiledAssets(type: Copy) {
 processResources.dependsOn copyAssetManifest, copyCompiledAssets
 bootRun.dependsOn processResources
 
-archivesBaseName = 'rundeck'
+base {
+    archivesName = 'rundeck'
+}
 
 tasks.withType(War).configureEach { War war ->
     war.dependsOn compileGroovyPages
@@ -945,4 +936,3 @@ if (project.hasProperty('signing.keyId') && project.hasProperty('signing.passwor
         sign(publishing.publications)
     }
 }
-
