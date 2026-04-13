@@ -28,15 +28,15 @@ $green-700: #117a37;
 $green-800: #0d5e2b;
 $green-900: #083b1b;
 
-$red-100: #fadcdc;
-$red-200: #f1a9a9;
-$red-300: #eb8383;
-$red-400: #e55b5b;
-$red-500: #de3434;
-$red-600: #c12121;
-$red-700: #9d1b1b;
-$red-800: #771414;
-$red-900: #4f0d0d;
+$red-100: #fde0d6;
+$red-200: #f5b09a;
+$red-300: #ed8264;
+$red-400: #dc5530;
+$red-500: #cb3300;
+$red-600: #ad2b00;
+$red-700: #8e2300;
+$red-800: #6e1b00;
+$red-900: #4a1200;
 
 $orange-100: #fee8d8;
 $orange-200: #fdcaa6;
@@ -246,32 +246,31 @@ $black: $grey-900;
   // Transitions and Animations
   --animation-scale: 1;
 
-  // Brand
+  // Brand — REV FCU
   --brand-color: var(--red-500);
-  --accent-color: #52c80b;
+  --accent-color: #1cd6c3;
 
-  // --background-color: #F4F5F7;
-  --background-color: var(--grey-200);
+  --background-color: #ffffff;
   --background-color-accent: var(--grey-500);
 
-  --background-color-lvl2: var(--white);
+  --background-color-lvl2: var(--grey-100);
   --background-color-accent-lvl2: var(--grey-300);
 
   --background-color-lvl3: var(--grey-400);
   --background-color-accent-lvl3: var(--grey-600);
 
-  --box-shadow-top-lv1: 0px -1px var(--grey-400);
-  --box-shadow-bottom-lv1: 0px 1px var(--grey-400);
+  --box-shadow-top-lv1: 0px -1px var(--grey-300);
+  --box-shadow-bottom-lv1: 0px 1px var(--grey-300);
 
-  --border-color: var(--grey-500);
+  --border-color: var(--grey-300);
 
   --default-color: var(--white);
   --default-states-color: var(--grey-700);
 
-  --primary-color: var(--blue-500);
-  --primary-states-color: var(--blue-700);
-  --primary-highlight-color: var(--blue-300);
-  --primary-bg-color: var(--blue-100);
+  --primary-color: var(--red-500);
+  --primary-states-color: var(--red-700);
+  --primary-highlight-color: var(--red-300);
+  --primary-bg-color: var(--red-100);
 
   --success-color: var(--green-500);
   --success-states-color: var(--green-700);
@@ -298,14 +297,14 @@ $black: $grey-900;
   --danger-bg-color: var(--red-100);
 
   // Typography
-  --font-color: var(--grey-700);
+  --font-color: #111827;
   --font-fill-color: var(--white);
 
   --text-primary-color: var(--primary-color);
-  --text-muted-color: var(--medium-grey);
+  --text-muted-color: var(--grey-500);
   --text-secondary-color: var(--text-muted-color);
 
-  --link-color: var(--primary-color);
+  --link-color: var(--red-600);
 
   // List Items
   --list-item-background-color: var(--white);
@@ -315,17 +314,17 @@ $black: $grey-900;
   --panel-background-color: var(--background-color-lvl2);
 
   // Main Bar
-  --mainbar-bg-color: var(--background-color-lvl2);
+  --mainbar-bg-color: var(--white);
   --mainbar-box-shadow: var(--box-shadow-bottom-lv1);
 
   // Side Bar
-  --sidebar-background-color: var(--grey-900);
-  --sidebar-item-color: var(--grey-500);
+  --sidebar-background-color: #1a1d23;
+  --sidebar-item-color: var(--grey-400);
   --sidebar-item-state-color: var(--white);
-  --sidebar-drawer-bg-color: var(--grey-800);
+  --sidebar-drawer-bg-color: #111318;
 
   // Subtitle Bar
-  --subtitle-bar-border-bottom: 1px solid var(--grey-200);
+  --subtitle-bar-border-bottom: 1px solid var(--grey-300);
 
   // Utility Bar
   --utility-bar-background-color: var(--background-color-lvl2);
@@ -338,113 +337,111 @@ $black: $grey-900;
   --popover-background-color: var(--background-color-lvl2);
 
   // Inputs
-  --input-bg-color: var(--grey-200);
+  --input-bg-color: var(--grey-100);
   --input-outline-color: var(--grey-300);
   --input-group-addon-bg-color: var(--grey-100);
-  --input-focus-color: var(--grey-100);
+  --input-focus-color: var(--white);
 
-  --input-checkbox: var(--grey-900);
+  --input-checkbox: var(--red-500);
 
   // Tables
   --table-stripe-color: var(--grey-100);
 
   // Cards
-  --card-default-background-color: var(--background-color-lvl2);
-  --card-default-border-color: var(--border-color);
+  --card-default-background-color: var(--white);
+  --card-default-border-color: var(--grey-300);
   --card-default-color: var(--font-color);
-  --card-default-box-shadow: 0px 4px 14px 0 rgba(0, 0, 0, 0.11);
+  --card-default-box-shadow: 0px 1px 3px 0 rgba(0, 0, 0, 0.08), 0px 1px 2px -1px rgba(0, 0, 0, 0.08);
 
   --card-accent-background-color: var(--teal-100);
   --card-accent-border-color: var(--teal-200);
 
   // Buttons
-  --button-box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.15);
+  --button-box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 *[data-color-theme="dark"] {
-  --grey-900: #23242f;
-  --grey-800: #333645;
-  --grey-700: #3e4153;
-  --grey-600: #494e62;
-  --grey-500: #53596f;
-  --grey-400: #6c7287;
-  --grey-300: #878da0;
-  --grey-200: #a7acbd;
-  --grey-100: #c7cbda;
+  --grey-900: #111827;
+  --grey-800: #1f2937;
+  --grey-700: #374151;
+  --grey-600: #4b5563;
+  --grey-500: #6b7280;
+  --grey-400: #9ca3af;
+  --grey-300: #d1d5db;
+  --grey-200: #e5e7eb;
+  --grey-100: #f3f4f6;
 
   // Inputs
   --input-bg-color: var(--grey-800);
   --input-color: var(--grey-100);
-  --input-outline-color: var(--grey-900);
-  --input-group-addon-bg-color: var(--grey-100);
+  --input-outline-color: #2f343f;
+  --input-group-addon-bg-color: var(--grey-700);
   --input-focus-color: var(--grey-900);
 
-  --input-checkbox: var(--grey-900);
+  --input-checkbox: var(--red-400);
 
-  --input-disabled-bg-color: var(--grey-400);
-  --input-disabled-color: var(--grey-100);
+  --input-disabled-bg-color: var(--grey-600);
+  --input-disabled-color: var(--grey-300);
 
   // Transitions and Animations
   --animation-scale: 1;
-  // --mishingo-was-here;
 
-  // Brand
-  --brand-color: var(--red-500);
-  --accent-color: #52c80b;
+  // Brand — REV FCU
+  --brand-color: var(--red-400);
+  --accent-color: #1cd6c3;
 
-  // --background-color: #F4F5F7;
-  --background-color: var(--grey-800);
-  --background-color-accent: var(--grey-400);
+  --background-color: var(--grey-900);
+  --background-color-accent: var(--grey-600);
 
-  --background-color-lvl2: var(--grey-700);
-  --background-color-accent-lvl2: var(--grey-500);
+  --background-color-lvl2: var(--grey-800);
+  --background-color-accent-lvl2: var(--grey-700);
 
-  --background-color-lvl3: var(--grey-600);
-  --background-color-accent-lvl3: var(--grey-300);
+  --background-color-lvl3: var(--grey-700);
+  --background-color-accent-lvl3: var(--grey-500);
 
-  --box-shadow-top-lv1: 0px -1px var(--grey-800);
-  --box-shadow-bottom-lv1: 0px 1px var(--grey-800);
+  --box-shadow-top-lv1: 0px -1px #2f343f;
+  --box-shadow-bottom-lv1: 0px 1px #2f343f;
 
-  --border-color: var(--grey-500);
+  --border-color: #2f343f;
 
   --default-color: var(--grey-900);
   --default-states-color: var(--grey-300);
 
-  --primary-color: var(--blue-500);
-  --primary-states-color: var(--blue-700);
-  --primary-highlight-color: var(--blue-100);
-  --primary-bg-color: var(--blue-600);
+  --primary-color: var(--red-400);
+  --primary-states-color: var(--red-300);
+  --primary-highlight-color: var(--red-200);
+  --primary-bg-color: var(--red-800);
 
-  --success-color: var(--green-600);
+  --success-color: var(--green-500);
   --success-states-color: var(--green-400);
-  --success-bg-color: var(--green-800);
+  --success-bg-color: var(--green-900);
 
   --cta-color: var(--green-500);
-  --cta-states-color: var(--green-700);
+  --cta-states-color: var(--green-400);
 
-  --info-color: var(--cyan-200);
+  --info-color: var(--cyan-300);
   --info-states-color: var(--cyan-500);
   --info-bg-color: var(--cyan-900);
 
-  --warning-color: var(--orange-500);
-  --warning-states-color: var(--orange-700);
-  --warning-bg-color: var(--orange-300);
+  --warning-color: var(--orange-400);
+  --warning-states-color: var(--orange-300);
+  --warning-bg-color: var(--orange-900);
 
-  --danger-color: var(--red-500);
-  --danger-states-color: var(--red-400);
-  --danger-bg-color: var(--red-300);
+  --danger-color: var(--red-400);
+  --danger-states-color: var(--red-300);
+  --danger-bg-color: var(--red-900);
 
   // Typography
-  --font-color: var(--white);
-  --font-fill-color: var(--white);
+  --font-color: #ffffff;
+  --font-fill-color: #ffffff;
 
   --text-primary-color: var(--primary-color);
-  --text-muted-color: var(--grey-100);
+  --text-muted-color: var(--grey-500);
   --text-secondary-color: var(--text-muted-color);
 
-  --link-color: #aec8f4;
+  --link-color: var(--red-300);
 
-  --text-code-color: var(--green-500);
+  --text-code-color: var(--green-400);
 
   // Panels
   --panel-background-color: var(--background-color-lvl2);
@@ -454,42 +451,40 @@ $black: $grey-900;
   --mainbar-box-shadow: var(--box-shadow-bottom-lv1);
 
   // Side Bar
-  --sidebar-background-color: var(--grey-700);
-  --sidebar-item-color: var(--grey-100);
+  --sidebar-background-color: #111318;
+  --sidebar-item-color: var(--grey-400);
   --sidebar-item-state-color: var(--white);
-  --sidebar-drawer-bg-color: var(--grey-900);
+  --sidebar-drawer-bg-color: #0d0f14;
 
   // Subtitle Bar
-  --subtitle-bar-border-bottom: 1px solid var(--grey-200);
+  --subtitle-bar-border-bottom: 1px solid #2f343f;
 
   // Utility Bar
   --utility-bar-background-color: var(--grey-900);
   --utility-bar-box-shadow: var(--box-shadow-top-lv1);
 
   // MOTD Drawer
-  --motd-drawer-background-color: var(--grey-700);
+  --motd-drawer-background-color: var(--grey-800);
 
   // Popover
-  --popover-background-color: var(--grey-900);
+  --popover-background-color: var(--grey-800);
 
   // Tables
-  --table-stripe-color: var(--grey-700);
+  --table-stripe-color: var(--grey-800);
 
   // List Items
-  --list-item-background-color: var(--grey-700);
-  --list-item-border-color: var(--grey-400);
+  --list-item-background-color: var(--grey-800);
+  --list-item-border-color: #2f343f;
 
   // Cards
-  --card-default-background-color: var(--background-color-lvl2);
-  --card-default-border-color: var(--background-color-accent-lvl2);
+  --card-default-background-color: var(--grey-800);
+  --card-default-border-color: #2f343f;
   --card-default-color: var(--font-color);
-  --card-default-box-shadow: 0px 4px 14px 0 rgba(0, 0, 0, 0.11);
+  --card-default-box-shadow: 0px 1px 3px 0 rgba(0, 0, 0, 0.3);
 
-  --card-accent-background-color: var(--teal-700);
+  --card-accent-background-color: var(--teal-800);
   --card-accent-border-color: var(--teal-700);
 
   // Buttons
-  --button-box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.15);
-
-  // --card-default-box-shadow: 0px 4px 14px 0 rgba(37, 70, 255, 0.918);
+  --button-box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.2);
 }

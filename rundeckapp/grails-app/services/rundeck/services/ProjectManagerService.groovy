@@ -90,7 +90,7 @@ class ProjectManagerService implements ProjectManager, ApplicationContextAware, 
     /**
      * Scheduled executor for retries
      */
-    private ExecutorService executor = Executors.newFixedThreadPool(2)
+    private ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()
 
     /**
      * Provides subtree access for the project without authorization

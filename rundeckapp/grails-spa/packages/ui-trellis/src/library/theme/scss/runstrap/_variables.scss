@@ -16,11 +16,11 @@ $gray: lighten($gray-base, 33.5%) !default; // #555
 $gray-light: lighten($gray-base, 46.7%) !default; // #777
 $gray-lighter: lighten($gray-base, 93.5%) !default; // #eee
 
-$brand-primary: darken(#428bca, 6.5%) !default; // #337ab7
-$brand-success: #5cb85c !default;
-$brand-info: #5bc0de !default;
-$brand-warning: #f0ad4e !default;
-$brand-danger: #d9534f !default;
+$brand-primary: #cb3300 !default; // REV FCU red
+$brand-success: #16a34a !default;
+$brand-info: #1cd6c3 !default; // REV FCU teal
+$brand-warning: #fa7d27 !default;
+$brand-danger: #cb3300 !default;
 //== Scaffolding
 
 //## Settings for some of the most global styles.
@@ -41,7 +41,7 @@ $link-hover-decoration: underline !default;
 //
 //## Font, line-height, and color for body text, headings, and more.
 
-$font-family-sans-serif: "Helvetica Neue", Helvetica, Arial, sans-serif !default;
+$font-family-sans-serif: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif !default;
 $font-family-serif: Georgia, "Times New Roman", Times, serif !default;
 //** Default monospace fonts for `<code>`, `<kbd>`, and `<pre>`.
 $font-family-monospace: Menlo, Monaco, Consolas, "Courier New", monospace !default;
@@ -124,10 +124,10 @@ $margin-base-vertical: 15px !default;
 
 // Cristina: am schimbat aici si s-au modificat inputurile
 $margin-bottom: 0 0 10px 0 !default;
-$border-radius-small: 3px !default;
-$border-radius-base: 4px !default;
-$border-radius-large: 6px !default;
-$border-radius-extreme: 6px !default;
+$border-radius-small: 6px !default;
+$border-radius-base: 8px !default;
+$border-radius-large: 12px !default;
+$border-radius-extreme: 12px !default;
 
 $border-radius-large-top: $border-radius-large $border-radius-large 0 0 !default;
 $border-radius-large-bottom: 0 0 $border-radius-large $border-radius-large !default;
@@ -313,10 +313,10 @@ $font-size-large: 18px !default;
 $font-size-large-navbar: 20px !default;
 
 $margin-bottom: 0 0 10px 0 !default;
-$border-radius-small: 3px !default;
-$border-radius-base: 4px !default;
-$border-radius-large: 6px !default;
-$border-radius-extreme: 6px !default;
+$border-radius-small: 6px !default;
+$border-radius-base: 8px !default;
+$border-radius-large: 12px !default;
+$border-radius-extreme: 12px !default;
 
 // Allows for customizing button radius independently from global border radius
 $btn-border-radius-base: $border-radius-base !default;

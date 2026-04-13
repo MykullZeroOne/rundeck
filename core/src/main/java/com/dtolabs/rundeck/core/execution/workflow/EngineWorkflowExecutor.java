@@ -385,7 +385,7 @@ public class EngineWorkflowExecutor extends BaseWorkflowExecutor {
                                     .ruleEngine(ruleEngine)
                                     .executor(() -> wfThreadcount > 0
                                                     ? Executors.newFixedThreadPool(wfThreadcount)
-                                                    : Executors.newCachedThreadPool()
+                                                    : Executors.newVirtualThreadPerTaskExecutor()
                                     )
                                     .state(state)
                                     .listeners(workflowSystemEventListeners)

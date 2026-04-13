@@ -41,7 +41,7 @@ class ScmLoaderService implements EventBusAware {
     /**
      * scheduledExecutor to load job SCM cache
      */
-    ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(2)
+    ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(4)
     final Map<String, ScheduledFuture> scmProjectLoaderProcess = Collections.synchronizedMap([:])
     final Map<String, Boolean> scmProjectInitLoaded = Collections.synchronizedMap([:])
     final Map<String, ScmPluginConfigData> scmPluginMeta = Collections.synchronizedMap([:])

@@ -81,9 +81,9 @@ environments {
             properties {
                 jmxEnabled= true
                 initialSize= 5
-                maxActive= 50
-                minIdle= 5
-                maxIdle= 25
+                maxActive= 100
+                minIdle= 10
+                maxIdle= 50
                 maxWait= 10000
                 maxAge= 600000
                 timeBetweenEvictionRunsMillis= 5000
