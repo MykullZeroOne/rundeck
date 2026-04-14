@@ -1,11 +1,24 @@
 package rundeck
 
-import com.dtolabs.rundeck.app.support.DomainIndexHelper
 import com.dtolabs.rundeck.plugins.ServiceNameConstants
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.rundeck.app.data.model.v1.job.workflow.WorkflowData
 import org.rundeck.app.data.model.v1.job.workflow.WorkflowStepData
+
+import jakarta.persistence.CascadeType
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.Lob
+import jakarta.persistence.OneToMany
+import jakarta.persistence.OrderColumn
+import jakarta.persistence.Table
+import jakarta.persistence.Transient
+import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Size
 
 /*
  * Copyright 2016 SimplifyOps, Inc. (http://simplifyops.com)
@@ -26,35 +39,34 @@ import org.rundeck.app.data.model.v1.job.workflow.WorkflowStepData
 
 /*
  * Workflow.java
- * 
+ *
  * User: Greg Schueler <a href="mailto:greg@dtosolutions.com">greg@dtosolutions.com</a>
  * Created: Feb 25, 2010 3:01:44 PM
  * $Id$
  */
 
+@Entity
+@Table(name = "workflow")
 public class Workflow implements WorkflowData {
 
-    Integer threadcount=1
-    Boolean keepgoing=false
-    List<WorkflowStep> commands
-    String strategy="node-first"
-    String pluginConfig
-    static belongsTo = [Execution, ScheduledExecution]
-    static hasMany=[commands:WorkflowStep]
-    static constraints = {
-        strategy(nullable:false, maxSize: 256)
-        pluginConfig(nullable: true, blank:true)
-    }
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    Long id
 
-    static mapping = {
-        pluginConfig type: 'text'
-        commands lazy: false
-        DomainIndexHelper.generate(delegate){
-            index 'WORKFLOW_COMMANDS_IDX_0',['commands']
-        }
-    }
-    //ignore fake property 'configuration' and do not store it
-    static transients = ['pluginConfigMap']
+    Integer threadcount = 1
+    Boolean keepgoing = false
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = jakarta.persistence.FetchType.EAGER)
+    @JoinColumn(name = "workflow_id")
+    @OrderColumn(name = "commands_idx")
+    List<WorkflowStep> commands
+
+    @NotNull
+    @Size(max = 256)
+    String strategy = "node-first"
+
+    @Lob
+    String pluginConfig
 
     List<WorkflowStepData> getSteps() {
         return commands
@@ -64,6 +76,7 @@ public class Workflow implements WorkflowData {
         return getSteps()
     }
 
+    @Transient
     public Map getPluginConfigMap() {
         //de-serialize the json
         if (null != pluginConfig) {

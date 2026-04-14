@@ -17,7 +17,6 @@
 package rundeck
 
 import com.dtolabs.rundeck.app.domain.EmbeddedJsonData
-import com.dtolabs.rundeck.app.support.DomainIndexHelper
 import com.dtolabs.rundeck.app.support.ExecutionContext
 import com.dtolabs.rundeck.core.common.FrameworkResource
 import com.dtolabs.rundeck.core.dispatcher.DataContextUtils
@@ -39,42 +38,101 @@ import org.rundeck.app.data.model.v1.job.option.OptionData
 import org.rundeck.app.data.model.v1.job.workflow.WorkflowData
 import org.rundeck.util.Sizes
 import rundeck.data.job.reference.JobReferenceImpl
-import rundeck.data.validation.shared.SharedJobConstraints
-import rundeck.data.validation.shared.SharedLogConfigConstraints
-import rundeck.data.validation.shared.SharedNodeConfigConstraints
-import rundeck.data.validation.shared.SharedProjectNameConstraints
+
+import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.Lob
+import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
+import jakarta.persistence.OrderColumn
+import jakarta.persistence.PrePersist
+import jakarta.persistence.PreUpdate
+import jakarta.persistence.Table
+import jakarta.persistence.Transient
+import jakarta.validation.constraints.Pattern
 
 import java.util.stream.Collectors
 
+@Entity
+@Table(name = "scheduled_execution")
 class ScheduledExecution extends ExecutionContext implements JobData, EmbeddedJsonData {
     static final String RUNBOOK_MARKER='---'
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     Long id
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JoinColumn(name = "scheduled_execution_id")
+    @OrderColumn(name = "sort_index")
     SortedSet<Option> options
-    static hasMany = [executions:Execution,options:Option,notifications:Notification]
+
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "scheduledExecution")
+    Set<Execution> executions
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JoinColumn(name = "scheduled_execution_id")
+    Set<Notification> notifications
 
     String groupPath
-    String userRoleList
-    String jobName
-    String description
-    String minute = "0"
-    String hour = "0"
-    String dayOfMonth = "?"
-    String month = "*"
-    String dayOfWeek = "*"
-    String seconds = "0"
-    String year = "*"
-    String crontabString
-    String uuid;
-    String logOutputThreshold;
-    String logOutputThresholdAction;
-    String logOutputThresholdStatus;
 
+    @Lob
+    String userRoleList
+
+    String jobName
+
+    @Lob
+    String description
+
+    @Pattern(regexp = /^[0-9*\/,-]*$/)
+    String minute = "0"
+
+    @Pattern(regexp = /^[0-9*\/,-]*$/)
+    String hour = "0"
+
+    @Pattern(regexp = /^[0-9*\/,?LW-]*$/)
+    String dayOfMonth = "?"
+
+    @Pattern(regexp = /^[0-9a-zA-z*\/,-]*$/)
+    String month = "*"
+
+    @Pattern(regexp = /^[0-9a-zA-z*\/?,L#-]*$/)
+    String dayOfWeek = "*"
+
+    @Pattern(regexp = /^[0-9*\/,-]*$/)
+    String seconds = "0"
+
+    @Pattern(regexp = /^[0-9*\/,-]*$/)
+    String year = "*"
+
+    @Transient
+    String crontabString
+
+    @Column(unique = true)
+    String uuid
+
+    String logOutputThreshold
+    String logOutputThresholdAction
+    String logOutputThresholdStatus
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "workflow_id")
     Workflow workflow
+
+    @Lob
     String workflowJson
 
     // Transient cached workflow data for validation (when deserialized from JSON)
     // This allows validation errors to be set and accessed on the workflow object
+    @Transient
     private transient WorkflowData cachedWorkflowData
+    @Transient
     private transient String cachedWorkflowJsonHash
 
     /** @deprecated unused */
@@ -85,26 +143,49 @@ class ScheduledExecution extends ExecutionContext implements JobData, EmbeddedJs
     Long totalTime=0
     /** @deprecated unused */
     Long execCount=0
+
+    @Transient
     String adhocExecutionType
+
     Date dateCreated
     Date lastUpdated
+
+    @Transient
     String notifySuccessRecipients
+    @Transient
     String notifyFailureRecipients
+    @Transient
     String notifyStartRecipients
+    @Transient
     String notifySuccessUrl
+    @Transient
     String notifyFailureUrl
+    @Transient
     String notifyStartUrl
+    @Transient
     String notifyAvgDurationRecipients
+    @Transient
     String notifyAvgDurationUrl
+    @Transient
     String notifyRetryableFailureRecipients
+    @Transient
     String notifyRetryableFailureUrl
+    @Transient
     String notifySuccessAttach
+    @Transient
     String notifyFailureAttach
+    @Transient
     String notifyRetryableFailureAttach
+
     Boolean multipleExecutions = false
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "orchestrator_id")
     Orchestrator orchestrator
+
     String serverNodeUUID
 
+    @Lob
     String notifyAvgDurationThreshold
 
     String timeZone
@@ -119,120 +200,32 @@ class ScheduledExecution extends ExecutionContext implements JobData, EmbeddedJs
     String defaultTab
 
     String maxMultipleExecutions
+
+    @Lob
     String pluginConfig
+
     String lastModifiedBy
 
-    static transients = ['userRoles', 'adhocExecutionType', 'notifySuccessRecipients', 'notifyFailureRecipients',
-                         'notifyStartRecipients', 'notifySuccessUrl', 'notifyFailureUrl', 'notifyStartUrl',
-                         'crontabString', 'notifyAvgDurationRecipients', 'notifyAvgDurationUrl',
-                         'notifyRetryableFailureRecipients', 'notifyRetryableFailureUrl', 'notifyFailureAttach',
-                         'notifySuccessAttach', 'notifyRetryableFailureAttach',
-                         'pluginConfigMap', 'components', 'workflowJsonMap', 'workflowData', 'cachedWorkflowData']
-
-    static constraints = {
-        importFrom SharedProjectNameConstraints
-        importFrom SharedJobConstraints
-        importFrom SharedNodeConfigConstraints
-        importFrom SharedLogConfigConstraints
-        workflow(nullable:true)
-        workflowJson(nullable:true, blank:true)
-        options(nullable:true)
-        nextExecution(nullable:true)
-        userRoleList(nullable:true)
-        totalTime(nullable:true)
-        execCount(nullable:true)
-        refExecCount(nullable:true)
-        seconds(nullable: true, matches: /^[0-9*\/,-]*$/)
-        minute(nullable:true, matches: /^[0-9*\/,-]*$/ )
-        hour(nullable:true, matches: /^[0-9*\/,-]*$/ )
-        dayOfMonth(nullable:true, matches: /^[0-9*\/,?LW-]*$/ )
-        month(nullable:true, matches: /^[0-9a-zA-z*\/,-]*$/ )
-        dayOfWeek(nullable:true, matches: /^[0-9a-zA-z*\/?,L#-]*$/ )
-        year(nullable:true, matches: /^[0-9*\/,-]*$/)
-        uuid(unique: true, nullable:true, blank:false, matches: FrameworkResource.VALID_RESOURCE_NAME_REGEX)
-        orchestrator(nullable:true)
-        crontabString(bindable: true,nullable: true)
-        pluginConfig(nullable: true)
-        user(nullable: true, blank: true)
-        lastModifiedBy(nullable: true, blank: true)
+    @PrePersist
+    void onPrePersist() {
+        Date now = new Date()
+        if (dateCreated == null) {
+            dateCreated = now
+        }
+        lastUpdated = now
     }
 
-    static mapping = {
-        user column: "rduser"
-        nodeInclude(type: 'text')
-        nodeExclude(type: 'text')
-        nodeIncludeName(type: 'text')
-        nodeExcludeName(type: 'text')
-        nodeIncludeTags(type: 'text')
-        nodeExcludeTags(type: 'text')
-        nodeIncludeOsName(type: 'text')
-        nodeExcludeOsName(type: 'text')
-        nodeIncludeOsFamily(type: 'text')
-        nodeExcludeOsFamily(type: 'text')
-        nodeIncludeOsArch(type: 'text')
-        nodeExcludeOsArch(type: 'text')
-        nodeIncludeOsVersion(type: 'text')
-        nodeExcludeOsVersion(type: 'text')
-        filter(type: 'text')
-        userRoleList(type: 'text')
-        jobName type: 'string'
-        argString type: 'text'
-        description type: 'text'
-        groupPath type: 'string'
-//        orchestrator type: 'text'
-        //options lazy: false
-        notifications sort: 'id', order: 'asc'
-        timeout(type: 'text')
-        retry(type: 'text')
-        retryDelay(type: 'text')
-        notifyAvgDurationThreshold(type: 'text')
-        serverNodeUUID(type: 'string')
-        pluginConfig(type: 'text')
-        workflowJson(type: 'text')
-        lastModifiedBy(type: 'string')
-        // Escape SQL reserved words with backticks for H2 compatibility
-        minute column: "`MINUTE`"
-        hour column: "`HOUR`"
-        month column: "`MONTH`"
-        seconds column: "`SECONDS`"
-        year column: "`YEAR`"
-
-        DomainIndexHelper.generate(delegate) {
-            index 'JOB_IDX_PROJECT', ['project']
-        }
+    @PreUpdate
+    void onPreUpdate() {
+        lastUpdated = new Date()
     }
-
-    static namedQueries = {
-		scheduledJobs {
-			eq 'scheduled', true
-		}
-		withServerUUID { uuid ->
-			eq 'serverNodeUUID', uuid
-		}
-		withoutServerUUID { uuid ->
-			ne 'serverNodeUUID', uuid
-		}
-		withAdHocScheduledExecutions {
-			executions {
-				eq 'status', 'scheduled'
-			}
-		}
-        withProject { project ->
-            eq 'project', project
-        }
-        findByUUID{ uuid ->
-            eq 'uuid', uuid
-            cache false
-            setUniqueResult true
-        }
-    }
-
 
     public static final daysofweeklist = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
     public static final monthsofyearlist = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 
     String toString() { generateFullName()+" - $description" }
 
+    @Transient
     Map getPluginConfigMap() {
         pluginConfig ? asJsonMap(pluginConfig) : [:]
     }
@@ -665,6 +658,7 @@ class ScheduledExecution extends ExecutionContext implements JobData, EmbeddedJs
         setUserRoleList(json)
     }
 
+    @Transient
     public List<String> getUserRoles(){
         if(userRoleList){
             //check if the string is a valid JSON
@@ -798,6 +792,7 @@ class ScheduledExecution extends ExecutionContext implements JobData, EmbeddedJs
      * Return evaluated timeout duration, or -1 if not set
      * @return
      */
+    @Transient
     public long getTimeoutDuration(){
         timeout? Sizes.parseTimeDuration(timeout):-1
     }
@@ -975,30 +970,10 @@ class ScheduledExecution extends ExecutionContext implements JobData, EmbeddedJs
       if (this.month && !this.month.equals("*") && !crontabSpecialValue(this.month.replaceAll(/-/,''))) {
           def map = parseRangeForList(this.month,monthsofyearlist,"month")
           result.putAll(map)
-//          this.month.split(",").each {
-//              if(monthsofyearlist.contains(it.toUpperCase())){
-//                result["month."+it.toUpperCase()]="true"
-//              }else if(it=~/^\d+$/){
-//                  def i=Integer.parseInt(it)
-//                  if(i>=0&&i<monthsofyearlist.size()){
-//                      result["month."+monthsofyearlist[i]]="true"
-//                  }
-//              }
-//          }
       }
       if (this.dayOfWeek && !this.dayOfWeek.equals("*") && !crontabSpecialValue(this.dayOfWeek.replaceAll(/-/,''))) {
           def map = parseRangeForList(this.dayOfWeek,daysofweeklist,"dayOfWeek")
           result.putAll(map)
-//          this.dayOfWeek.split(",").each {
-//              if(daysofweeklist.contains(it.toUpperCase())){
-//                result["dayOfWeek."+it.toUpperCase()]="true"
-//              }else if(it=~/^\d+$/){
-//                  def i=Integer.parseInt(it)
-//                  if(i>=0&&i<daysofweeklist.size()) {
-//                      result["dayOfWeek." + daysofweeklist[i]] = "true"
-//                  }
-//              }
-//          }
       }
       return result;
   }
@@ -1011,6 +986,7 @@ class ScheduledExecution extends ExecutionContext implements JobData, EmbeddedJs
         }
     }
 
+    @Transient
     String getExtid(){
         return this.uuid?:this.id.toString()
     }
@@ -1186,18 +1162,22 @@ class ScheduledExecution extends ExecutionContext implements JobData, EmbeddedJs
         new TreeSet<>(options.collect{it.toJobOption()})
     }
 
+    @Transient
     SortedSet<OptionData> getOptionSet() {
         return options
     }
 
+    @Transient
     Set<NotificationData> getNotificationSet() {
         return notifications
     }
 
+    @Transient
     Map<String, JobComponentData> getComponents() {
         //TODO: hydrate job component data
     }
 
+    @Transient
     RdLogConfig getLogConfig() {
         new RdLogConfig(loglevel: loglevel,
                 logOutputThreshold: logOutputThreshold,
@@ -1206,6 +1186,7 @@ class ScheduledExecution extends ExecutionContext implements JobData, EmbeddedJs
         )
     }
 
+    @Transient
     RdNodeConfig getNodeConfig() {
         new RdNodeConfig(
                 nodeInclude : nodeInclude,
@@ -1238,6 +1219,7 @@ class ScheduledExecution extends ExecutionContext implements JobData, EmbeddedJs
         )
     }
 
+    @Transient
     RdSchedule getSchedule() {
         new RdSchedule (
                 year : year,
@@ -1284,6 +1266,7 @@ class ScheduledExecution extends ExecutionContext implements JobData, EmbeddedJs
      * that allows validation errors to be set and accessed.
      * @return WorkflowData instance (either Workflow domain or deserialized validateable RdWorkflow from JSON)
      */
+    @Transient
     WorkflowData getWorkflowData() {
         // New format: deserialize from JSON
         if (workflowJson != null) {
@@ -1397,6 +1380,7 @@ class ScheduledExecution extends ExecutionContext implements JobData, EmbeddedJs
      * Helper to get workflow as a Map (for backward compatibility with existing code).
      * @return Map representation of workflow
      */
+    @Transient
     Map getWorkflowJsonMap() {
         if (workflowJson != null) {
             return asJsonMap(workflowJson)
@@ -1404,4 +1388,3 @@ class ScheduledExecution extends ExecutionContext implements JobData, EmbeddedJs
         return null
     }
 }
-

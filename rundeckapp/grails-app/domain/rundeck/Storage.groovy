@@ -16,72 +16,94 @@
 
 package rundeck
 
-import com.dtolabs.rundeck.app.support.DomainIndexHelper
 import com.fasterxml.jackson.databind.ObjectMapper
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.Index
+import jakarta.persistence.Lob
+import jakarta.persistence.PrePersist
+import jakarta.persistence.PreUpdate
+import jakarta.persistence.Table
+import jakarta.persistence.Temporal
+import jakarta.persistence.TemporalType
+import jakarta.persistence.Transient
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.Size
 import org.rundeck.app.data.model.v1.storage.RundeckStorage
 import org.rundeck.storage.api.Path
 import org.rundeck.storage.api.PathUtil
 
-import static grails.gorm.hibernate.mapping.MappingBuilder.orm
+@Entity
+@Table(name = "storage", indexes = [
+    @Index(name = "STORAGE_IDX_NAMESPACE", columnList = "namespace")
+])
+class Storage implements RundeckStorage {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    Long id
 
-class Storage implements RundeckStorage{
+    @Size(max = 255)
+    @Column(nullable = true)
     String namespace
+
+    @Size(max = 2048)
+    @Column(nullable = true)
     String dir
+
+    @NotBlank
+    @Size(max = 1024)
+    @Column(nullable = false)
     String name
+
     /**
      * json encoded metadata
      */
+    @Lob
+    @Column(nullable = true)
     String jsonData
+
     /**
      * Unique sha1 of namespace+dir+name to prevent duplicate
      */
+    @NotBlank
+    @Size(min = 40, max = 40)
+    @Column(nullable = false, unique = true)
     String pathSha
+
+    @Lob
+    @Column(nullable = true)
     byte[] data
+
+    @Temporal(TemporalType.TIMESTAMP)
     Date dateCreated
+
+    @Temporal(TemporalType.TIMESTAMP)
     Date lastUpdated
-    static constraints = {
-        namespace(nullable: true, blank: true, size: 0..255)
-        jsonData(nullable: true, blank: true)
-        data(nullable: true, maxSize: 52_428_800) /* 50MB */
-        name(nullable: false, blank: false, maxSize: 1024)
-        dir(nullable: true, blank: true, maxSize: 2048)
-        pathSha(nullable: false, blank: false, size: 40..40, unique: true)
-    }
 
     private void setupSha() {
         dir = dir ?: ''
         pathSha = ((namespace ?: '') + ':' + getPath().path).encodeAsSHA1()
     }
+
+    @PrePersist
     def beforeInsert() {
         setupSha()
     }
+
+    @PreUpdate
     def beforeUpdate() {
         setupSha()
     }
-    def beforeValidate() {
-        setupSha()
-    }
-    static final mapping = orm {
-        cache {
-            enabled true
-            usage 'nonstrict-read-write'
-        }
-        property 'data', [type: 'binary']
-        property 'dir', [type: 'string']
-        property 'jsonData', [type: 'text']
-        property 'name', [type: 'string']
 
-        DomainIndexHelper.generate(delegate) {
-            index 'STORAGE_IDX_NAMESPACE', ['namespace']
-        }
-    }
-    //ignore fake property 'storageMeta' and 'path' and do not store it
-    static transients = ['storageMeta','path']
-
+    @Transient
     public Path getPath() {
         return PathUtil.asPath((dir?(dir+'/'):'')+name)
     }
+
     public void setPath(String path){
         def path1 = PathUtil.asPath(path)
         def parent = PathUtil.parentPath(path1)
@@ -89,6 +111,7 @@ class Storage implements RundeckStorage{
         name=path1.name
     }
 
+    @Transient
     public Map getStorageMeta() {
         //de-serialize the json
         if (null != jsonData) {

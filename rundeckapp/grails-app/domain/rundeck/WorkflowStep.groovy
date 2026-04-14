@@ -16,42 +16,52 @@
 
 package rundeck
 
-import com.dtolabs.rundeck.app.support.DomainIndexHelper
 import com.fasterxml.jackson.databind.ObjectMapper
-import grails.gorm.dirty.checking.DirtyCheck
 import org.rundeck.app.data.model.v1.job.workflow.WorkflowStepData
-import rundeck.data.validation.shared.SharedWorkflowStepConstraints
 
-@DirtyCheck
+import jakarta.persistence.CascadeType
+import jakarta.persistence.DiscriminatorColumn
+import jakarta.persistence.DiscriminatorType
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.Inheritance
+import jakarta.persistence.InheritanceType
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.Lob
+import jakarta.persistence.OneToOne
+import jakarta.persistence.Table
+import jakarta.persistence.Transient
+
+@Entity
+@Table(name = "workflow_step")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "step_type", discriminatorType = DiscriminatorType.STRING)
 abstract class WorkflowStep implements WorkflowStepData {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    Long id
+
+    @OneToOne(cascade = CascadeType.ALL, fetch = jakarta.persistence.FetchType.EAGER)
+    @JoinColumn(name = "error_handler_id")
     WorkflowStep errorHandler
+
     Boolean keepgoingOnSuccess
     String description
+
+    @Lob
     String pluginConfigData
+
+    @Transient
     String runnerNode
-
-    static belongsTo = [Workflow, WorkflowStep]
-    static constraints = {
-        importFrom SharedWorkflowStepConstraints
-        errorHandler(nullable: true)
-        pluginConfigData(nullable: true, blank: true)
-    }
-    //ignore fake property 'configuration' and do not store it
-    static transients = ['pluginConfig','runnerNode']
-    static mapping = {
-        pluginConfigData(type: 'text')
-        errorHandler lazy: false
-
-        DomainIndexHelper.generate(delegate) {
-            index 'IDX_ERROR_HANDLER', ['errorHandler']
-        }
-    }
 
     public String summarize() {
         return this.toString()
     }
 
-
+    @Transient
     public Map getPluginConfig() {
         //de-serialize the json
         if (null != pluginConfigData) {

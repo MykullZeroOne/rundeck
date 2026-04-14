@@ -19,51 +19,61 @@ package rundeck
 import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.rundeck.app.data.model.v1.job.notification.NotificationData
-import rundeck.data.validation.shared.SharedNotificationConstraints
 
-/*
- * Notification.java
- *
- * User: Greg Schueler <a href="mailto:greg@dtosolutions.com">greg@dtosolutions.com</a>
- * Created: May 17, 2010 11:20:53 AM
- * $Id$
- */
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.Lob
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.PrePersist
+import jakarta.persistence.Table
+import jakarta.persistence.Transient
+import jakarta.validation.constraints.NotBlank
 
 /**
  * Represents a registration of notification to happen on some event trigger, and some type of notification.
  */
-public class Notification implements NotificationData {
+@Entity
+@Table(name = "notification")
+class Notification implements NotificationData {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    Long id
+
     /**
      * eventTrigger is the name of the event to cause the notification, e.g. "onfailure" to happen when a
      * failure of some type occurs
      */
+    @NotBlank
     String eventTrigger
+
     /**
      * type is the type of notification to initiate, e.g. "email" to send an email, "url" to POST to a url
      */
+    @NotBlank
     String type
+
     /**
      * send the notification in the specified format (xml|json) xml is default
      */
     String format
+
     /**
      * content contains data to use for the notification, e.g. a list of email addresses, or a list of URLs
      */
+    @Lob
     String content
 
-    static belongsTo=[scheduledExecution:ScheduledExecution]
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "scheduled_execution_id")
+    ScheduledExecution scheduledExecution
 
-    static constraints={
-        importFrom SharedNotificationConstraints
-        content(nullable:true,blank:true)
-    }
-    static mapping = {
-        content type: 'text'
-    }
-    //ignore fake property 'configuration' and do not store it
-    static transients = ['configuration']
-
-    public Map getConfiguration() {
+    @Transient
+    Map getConfiguration() {
         //de-serialize the json
         if (null != content) {
             final ObjectMapper mapper = new ObjectMapper()
@@ -78,7 +88,7 @@ public class Notification implements NotificationData {
 
     }
 
-    public void setConfiguration(Map obj) {
+    void setConfiguration(Map obj) {
         //serialize json and store into field
         if (null != obj) {
             final ObjectMapper mapper = new ObjectMapper()
@@ -92,7 +102,7 @@ public class Notification implements NotificationData {
      *
      * @return
      */
-    public Map mailConfiguration(){
+    Map mailConfiguration(){
         if (content.startsWith('{') && content.endsWith('}')) {
             //parse as json
             return getConfiguration()
@@ -105,7 +115,7 @@ public class Notification implements NotificationData {
      *
      * @return
      */
-    public Map urlConfiguration(){
+    Map urlConfiguration(){
         if (content?.startsWith('{') && content?.endsWith('}')) {
             //parse as json
             return getConfiguration()
@@ -113,7 +123,7 @@ public class Notification implements NotificationData {
         return [urls: content]
     }
 
-    public static Notification fromMap(String key, Map data){
+    static Notification fromMap(String key, Map data){
         Notification n = new Notification(eventTrigger:key)
         if(data.email || data.recipients){
             n.type='email'
@@ -152,7 +162,7 @@ public class Notification implements NotificationData {
         }
         return n;
     }
-    public Map toMap(){
+    Map toMap(){
         if(type=='email'){
             return ['email':mailConfiguration()]
         }else if(type=='url'){
@@ -168,7 +178,7 @@ public class Notification implements NotificationData {
             return null
         }
     }
-    public Map toNormalizedMap(){
+    Map toNormalizedMap(){
         if(type=='email'){
             def configuration = mailConfiguration()
             if(configuration.attachLog && configuration.attachLogInline){
@@ -193,7 +203,7 @@ public class Notification implements NotificationData {
         }
     }
 
-    public static Notification fromNormalizedMap( Map data){
+    static Notification fromNormalizedMap( Map data){
         Notification n = new Notification(eventTrigger:data.trigger,type:data.type)
         if(data.type=='email'){
             def map=data.config
@@ -222,7 +232,7 @@ public class Notification implements NotificationData {
     }
 
 
-    public String toString ( ) {
+    String toString ( ) {
         return "Notification{" +
         "eventTrigger='" + eventTrigger + '\'' +
         ", type='" + type + '\'' +
@@ -231,7 +241,8 @@ public class Notification implements NotificationData {
         '}' ;
     }
 
-    def beforeValidate() {
+    @PrePersist
+    void beforeValidate() {
         if(this.type == 'email'){
             if (content.startsWith('{') && content.endsWith('}')) {
                 //parse as json

@@ -1,5 +1,22 @@
 package rundeck
 
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.Lob
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.PrePersist
+import jakarta.persistence.PreUpdate
+import jakarta.persistence.Table
+import jakarta.persistence.Transient
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Size
+
+@Entity
+@Table(name = "job_file_record")
 class JobFileRecord {
     /**
      * Original file name
@@ -11,28 +28,47 @@ class JobFileRecord {
     /**
      * State changes [to: [from,from]]
      */
+    @Transient
     public static final Map<String, List<String>> STATES = [
             (STATE_EXPIRED) : [STATE_TEMP],
             (STATE_RETAINED): [STATE_TEMP],
             (STATE_DELETED) : [STATE_TEMP, STATE_RETAINED]
     ]
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    Long id
+
+    @Size(max = 1024)
     String fileName
+
     /**
      * Data size
      */
+    @NotNull
     Long size
+
     /**
      * The type of file record
      */
+    @NotBlank
+    @Size(max = 255)
     String recordType
+
     /**
      * Name used for the file record (e.g. option name)
      */
+    @Size(max = 255)
     String recordName
+
+    @NotBlank
+    @Size(max = 255)
     String user
+
     Date dateCreated
     Date lastUpdated
     Date expirationDate
+
     /**
      * State of the file,
      * 'temp' = The file is uploaded but not yet used, -> expired, retained, deleted
@@ -40,40 +76,52 @@ class JobFileRecord {
      * 'expired' = The file was removed after expiration
      * 'retained' = The file is available and was retained, -> deleted
      */
+    @NotBlank
+    @Size(max = 255)
     String fileState
+
+    @NotBlank
     String uuid
+
     String serverNodeUUID
+
+    @NotBlank
+    @Size(min = 64, max = 64)
     String sha
+
+    @NotBlank
     String jobId
+
+    @NotBlank
+    @Size(max = 255)
     String storageType // storage plugin type "tmpdir", "storage"
+
+    @NotBlank
+    @Lob
     String storageReference // path in storage facility, or temp dir, depends on backend plugin
+
+    @Lob
     String storageMeta // metadata...?
+
+    @NotBlank
     String project
+
+    @ManyToOne
+    @JoinColumn(name = "execution_id")
     Execution execution
-    static constraints = {
-        fileName(nullable: true, maxSize: 1024)
-        size(nullable: false)
-        recordType(nullable: false, maxSize: 255)
-        fileState(nullable: false, maxSize: 255, inList: [STATE_TEMP, STATE_DELETED, STATE_EXPIRED, STATE_RETAINED])
-        user(nullable: false, maxSize: 255)
-        expirationDate(nullable: true)
-        uuid(nullable: false)
-        serverNodeUUID(nullable: true)
-        sha(nullable: false, size: 64..64)
-        jobId(nullable: false)
-        recordName(nullable: true, maxSize: 255)
-        storageType(nullable: false, maxSize: 255)
-        storageReference(nullable: false)
-        storageMeta(nullable: true)
-        execution(nullable: true)
-        project(nullable: false)
+
+    @PrePersist
+    void onPrePersist() {
+        Date now = new Date()
+        if (dateCreated == null) {
+            dateCreated = now
+        }
+        lastUpdated = now
     }
 
-    static mapping = {
-        storageMeta(type: 'text')
-        storageReference(type: 'text')
-        user column: "rduser"
-        size column: "`SIZE`"
+    @PreUpdate
+    void onPreUpdate() {
+        lastUpdated = new Date()
     }
 
     boolean stateIsExpired() {

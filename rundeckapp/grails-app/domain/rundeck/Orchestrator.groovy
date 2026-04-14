@@ -20,40 +20,40 @@ import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.rundeck.app.data.model.v1.job.orchestrator.OrchestratorData
 
-/*
- * Notification.java
- * 
- * User: Greg Schueler <a href="mailto:greg@dtosolutions.com">greg@dtosolutions.com</a>
- * Created: May 17, 2010 11:20:53 AM
- * $Id$
- */
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.Lob
+import jakarta.persistence.Table
+import jakarta.persistence.Transient
+import jakarta.validation.constraints.NotBlank
 
 /**
  * Represents a registration of a orchestrator and configuration
  */
-public class Orchestrator implements OrchestratorData {
+@Entity
+@Table(name = "orchestrator")
+class Orchestrator implements OrchestratorData {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    Long id
+
     /**
-     * type is the type of orchestrator to initiate, e.g. "limitRun" 
+     * type is the type of orchestrator to initiate, e.g. "limitRun"
      */
+    @NotBlank
     String type
+
     /**
      * content contains data to use for the orchestrator, e.g. a percentage
      */
+    @Lob
     String content
 
-   // static belongsTo=[scheduledExecution:ScheduledExecution]
-
-    static constraints={
-        type(nullable:false,blank:false)
-        content(nullable:true,blank:true)
-    }
-    static mapping = {
-        content type: 'text'
-    }
-    //ignore fake property 'configuration' and do not store it
-    static transients = ['configuration'] 
-    
-    public Map getConfiguration() {
+    @Transient
+    Map getConfiguration() {
         //de-serialize the json
         if (null != content) {
             final ObjectMapper mapper = new ObjectMapper()
@@ -68,7 +68,7 @@ public class Orchestrator implements OrchestratorData {
 
     }
 
-    public void setConfiguration(Map obj) {
+    void setConfiguration(Map obj) {
         //serialize json and store into field
         if (null != obj) {
             final ObjectMapper mapper = new ObjectMapper()
@@ -78,12 +78,12 @@ public class Orchestrator implements OrchestratorData {
         }
     }
 
-    public static Orchestrator fromMap(Map data){
+    static Orchestrator fromMap(Map data){
         Orchestrator n = new Orchestrator(type:data.type)
         n.configuration=data.configuration instanceof Map?data.configuration:[:]
         return n;
     }
-    public Map toMap(){
+    Map toMap(){
         if(type){
             def data=[type:type]
             if(this.configuration){
@@ -96,7 +96,7 @@ public class Orchestrator implements OrchestratorData {
     }
 
 
-    public String toString ( ) {
+    String toString ( ) {
         return "Orchestrator{" +
         "type='" + type + '\'' +
         ", content='" + content + '\'' +

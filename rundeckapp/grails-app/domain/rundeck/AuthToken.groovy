@@ -16,55 +16,90 @@
 
 package rundeck
 
-import com.dtolabs.rundeck.app.support.DomainIndexHelper
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.Lob
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.PrePersist
+import jakarta.persistence.Table
+import jakarta.persistence.Temporal
+import jakarta.persistence.TemporalType
+import jakarta.persistence.Transient
+import jakarta.validation.constraints.NotNull
 import org.rundeck.app.data.model.v1.authtoken.AuthTokenMode
 import org.rundeck.app.data.model.v1.authtoken.AuthTokenType
 import org.rundeck.app.data.model.v1.authtoken.AuthenticationToken
 
 import java.time.Clock
 
+@Entity
+@Table(name = "auth_token", indexes = [
+    @Index(name = "IDX_TOKEN", columnList = "token"),
+    @Index(name = "IDX_TYPE", columnList = "type")
+])
 class AuthToken implements AuthenticationToken {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    Long id
+
+    @NotNull
+    @Column(nullable = false, unique = true)
     String token
+
+    @Lob
+    @NotNull
+    @Column(nullable = false)
     String authRoles
+
+    @Column(nullable = true)
     String uuid
+
+    @Column(nullable = true)
     String creator
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(nullable = true)
     Date expiration
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(nullable = true)
     Date dateCreated
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(nullable = true)
     Date lastUpdated
+
+    @Column(nullable = true)
     String name
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = true)
     AuthTokenType type = AuthTokenType.USER
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = true)
     AuthTokenMode tokenMode = AuthTokenMode.SECURED
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    User user
+
+    @Transient
     private transient String clearToken = null
 
-    static belongsTo = [user:User]
-    static transients = ['printableToken','ownerName', 'clearToken']
-    static constraints = {
-        token(nullable:false,unique:true)
-        authRoles(nullable:false)
-        uuid(nullable: true)
-        user(nullable: false)
-        creator(nullable: true)
-        expiration(nullable: true)
-        lastUpdated(nullable: true)
-        dateCreated(nullable: true)
-        type(nullable: true)
-        name(nullable: true)
-        tokenMode(nullable: true)
-    }
-    static mapping = {
-        authRoles type: 'text'
-        'type' defaultValue: "'USER'"
-
-        DomainIndexHelper.generate(delegate) {
-            index 'IDX_TOKEN', ['token']
-            index 'IDX_TYPE', ['type']
-        }
-    }
-
+    @PrePersist
     def beforeInsert() {
         encodeToken()
     }
-
 
     /**
      * Encodes the token value according to the tokenMode set.
@@ -94,11 +129,13 @@ class AuthToken implements AuthenticationToken {
         }
     }
 
+    @Transient
     String getClearToken() {
         return clearToken
     }
 
     @Override
+    @Transient
     Set<String> getAuthRolesSet() {
         return parseAuthRoles(authRoles)
     }
@@ -118,10 +155,10 @@ class AuthToken implements AuthenticationToken {
         expiration!=null && (expiration < Date.from(Clock.systemUTC().instant()))
     }
 
-
     /**
      * @return Printable value for token: the uuid, or a truncated token value
      */
+    @Transient
     String getPrintableToken() {
         uuid ? "[ID: $uuid]" : (printable(token))
     }
@@ -139,6 +176,7 @@ class AuthToken implements AuthenticationToken {
     }
 
     @Override
+    @Transient
     String getOwnerName() {
         return user.login
     }

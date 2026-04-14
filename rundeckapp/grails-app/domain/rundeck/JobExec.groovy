@@ -20,6 +20,12 @@ import com.dtolabs.rundeck.execution.IWorkflowJobItem
 import org.rundeck.app.data.job.converters.WorkflowToRdWorkflowConverter
 import rundeck.data.constants.WorkflowStepConstants
 
+import jakarta.persistence.DiscriminatorValue
+import jakarta.persistence.Entity
+import jakarta.persistence.Lob
+import jakarta.persistence.Transient
+import jakarta.validation.constraints.Size
+
 /*
 * JobExec.java
 *
@@ -28,19 +34,38 @@ import rundeck.data.constants.WorkflowStepConstants
 * $Id$
 */
 
+@Entity
+@DiscriminatorValue("JobExec")
 public class JobExec extends WorkflowStep implements IWorkflowJobItem{
 
+    @Size(max = 1024)
     String jobName
+
+    @Size(max = 2048)
     String jobGroup
+
+    @Size(max = 2048)
     String jobProject
+
+    @Transient
     String jobIdentifier
+
+    @Lob
     String argString
+
+    @Lob
     String uuid
+
+    @Lob
     String nodeFilter
+
     Boolean nodeKeepgoing
     Integer nodeThreadcount
     Boolean nodeStep
+
+    @Lob
     String nodeRankAttribute
+
     Boolean nodeRankOrderAscending
     Boolean nodeIntersect
     Boolean failOnDisable
@@ -48,37 +73,6 @@ public class JobExec extends WorkflowStep implements IWorkflowJobItem{
     Boolean importOptions
     Boolean useName
     Boolean ignoreNotifications
-    static transients = ['jobIdentifier']
-
-    static constraints = {
-        jobName(nullable: true, blank: true, maxSize: 1024)
-        jobGroup(nullable: true, blank: true, maxSize: 2048)
-        jobProject(nullable: true, blank: true, maxSize: 2048)
-        argString(nullable: true, blank: true)
-        nodeStep(nullable: true)
-        nodeKeepgoing(nullable: true)
-        nodeFilter(nullable: true, maxSize: 1024)
-        nodeThreadcount(nullable: true)
-        nodeRankAttribute(nullable: true, maxSize: 256)
-        nodeRankOrderAscending(nullable: true)
-        nodeIntersect(nullable: true)
-        failOnDisable(nullable: true)
-        importOptions(nullable: true)
-        uuid(nullable: true)
-        useName(nullable:true)
-        ignoreNotifications(nullable: true)
-        childNodes(nullable: true)
-    }
-
-    static mapping = {
-        argString type: 'text'
-        jobName type: 'string'
-        jobGroup type: 'string'
-        jobProject type: 'string'
-        nodeFilter type: 'text'
-        nodeRankAttribute type: 'text'
-        uuid type: 'text'
-    }
 
     public String toString() {
         return "jobref((uuid=\"${uuid}\" name=\"${jobName}\" group=\"${jobGroup}\" project=\"${jobProject}\" argString=\"${argString}\" " +
@@ -96,10 +90,12 @@ public class JobExec extends WorkflowStep implements IWorkflowJobItem{
         return "job: ${this.getJobIdentifier()}${argString?' -- '+argString:''}"
     }
 
+    @Transient
     public Map getConfiguration() {
         return WorkflowToRdWorkflowConverter.convertConfiguration(this.toMap())
     }
 
+    @Transient
     public String getPluginType() {
         return WorkflowStepConstants.TYPE_JOB_REF
     }

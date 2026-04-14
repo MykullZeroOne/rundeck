@@ -16,10 +16,14 @@
 
 package rundeck
 
-import com.dtolabs.rundeck.app.support.DomainIndexHelper
+import jakarta.persistence.Entity
+import jakarta.persistence.Lob
+import jakarta.persistence.Table
 import org.rundeck.app.data.model.v1.report.RdExecReport
 
 
+@Entity
+@Table(name = "exec_report")
 class ExecReport extends BaseReport implements RdExecReport{
 
     @Deprecated
@@ -29,42 +33,23 @@ class ExecReport extends BaseReport implements RdExecReport{
     Long executionId
     String jobId
     Boolean adhocExecution
+
+    @Lob
     String adhocScript
+
     String abortedByUser
+
+    @Lob
     String succeededNodeList
+
+    @Lob
     String failedNodeList
+
+    @Lob
     String filterApplied
+
     String jobUuid
     String executionUuid
-
-    static mapping = {
-        adhocScript type: 'text'
-        filterApplied type: 'text'
-        succeededNodeList type: 'text'
-        failedNodeList type: 'text'
-        jobId column: 'jc_job_id'
-        DomainIndexHelper.generate(delegate) {
-            index 'EXEC_REPORT_IDX_0', [/*'class', 'ctxProject', 'dateCompleted',*/ 'executionId', 'jcJobId']
-            index 'EXEC_REPORT_IDX_1', [/*'ctxProject',*/ 'jcJobId']
-            index 'EXEC_REPORT_IDX_2', [/*'class',*/ 'executionId']
-        }
-    }
-
-    static constraints = {
-        adhocExecution(nullable:true)
-        ctxCommand(nullable:true,blank:true)
-        ctxController(nullable:true,blank:true)
-        jobId(nullable:true,blank:true)
-        executionId(nullable:true)
-        adhocScript(nullable:true,blank:true)
-        abortedByUser(nullable:true,blank:true)
-        succeededNodeList(nullable:true,blank:true)
-        failedNodeList(nullable:true,blank:true)
-        filterApplied(nullable:true,blank:true)
-        jobUuid(nullable:true)
-        executionUuid(nullable:true)
-
-    }
 
     public static final ArrayList<String> exportProps = BaseReport.exportProps +[
             'executionId',
@@ -156,12 +141,6 @@ class ExecReport extends BaseReport implements RdExecReport{
         }
         ret = this.failedNodeList?ret+ this.failedNodeList:ret
         ret
-    }
-
-    static void deleteByProject(String project) {
-        ExecReport.where {
-            project == project
-        }.deleteAll()
     }
 
 }

@@ -17,166 +17,104 @@
 package rundeck
 
 import com.dtolabs.rundeck.app.domain.EmbeddedJsonData
-import com.dtolabs.rundeck.app.support.DomainIndexHelper
 import com.dtolabs.rundeck.app.support.ExecutionContext
-import com.dtolabs.rundeck.core.common.FrameworkResource
 import com.dtolabs.rundeck.core.execution.ExecutionReference
 import com.dtolabs.rundeck.core.jobs.JobReference
 import com.dtolabs.rundeck.util.XmlParserUtil
 import com.fasterxml.jackson.core.JsonParseException
-import grails.gorm.DetachedCriteria
+import jakarta.persistence.CascadeType
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.Lob
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToOne
+import jakarta.persistence.Table
+import jakarta.persistence.Transient
 import org.rundeck.app.data.model.v1.execution.ExecutionData
 import org.rundeck.app.data.model.v1.execution.ExecutionDataSummary
 import org.rundeck.app.data.model.v1.job.workflow.WorkflowData
-import org.rundeck.app.data.model.v1.job.workflow.WorkflowStepData
 import org.rundeck.app.data.workflow.WorkflowDataImpl
 import rundeck.data.execution.RdExecutionDataSummary
 import rundeck.data.job.RdNodeConfig
-import rundeck.data.validation.shared.SharedExecutionConstraints
-import rundeck.data.validation.shared.SharedNodeConfigConstraints
-import rundeck.data.validation.shared.SharedServerNodeUuidConstraints
 import rundeck.services.ExecutionService
 import rundeck.services.execution.ExecutionReferenceImpl
 
 /**
 * Execution
 */
+@Entity
+@Table(name = "execution")
 class Execution extends ExecutionContext implements EmbeddedJsonData, ExecutionData {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    Long id
+
+    @ManyToOne
+    @JoinColumn(name = "scheduled_execution_id")
     ScheduledExecution scheduledExecution
+
     String uuid = UUID.randomUUID().toString()
     String jobUuid
     Date dateStarted
     Date dateCompleted
     String status
+
+    @Lob
     String outputfilepath
+
     Long execIdForLogStore
+
+    @Lob
     String failedNodeList
+
+    @Lob
     String succeededNodeList
+
     String abortedby
     boolean cancelled
-    Boolean timedOut=false
+    Boolean timedOut = false
+
+    @ManyToOne
+    @JoinColumn(name = "workflow_id")
     Workflow workflow
+
+    @Lob
     String workflowJson
+
     String executionType
-    Integer retryAttempt=0
-    Boolean willRetry=false
+    Integer retryAttempt = 0
+    Boolean willRetry = false
+
+    @ManyToOne
+    @JoinColumn(name = "retry_execution_id")
     Execution retryExecution
+
+    @ManyToOne
+    @JoinColumn(name = "orchestrator_id")
     Orchestrator orchestrator
+
+    @Lob
     String userRoleList
+
     String serverNodeUUID
-    Integer nodeThreadcount=1
+    Integer nodeThreadcount = 1
     Long retryOriginalId
     Long retryPrevId
+
+    @Lob
     String extraMetadata
+
+    @OneToOne(mappedBy = "execution", cascade = CascadeType.ALL)
+    LogFileStorageRequest logFileStorageRequest
+
     private static final String REMOTE_LOG_FILEPATH_PREFIX = 'ext:'
 
+    @Transient
     boolean serverNodeUUIDChanged = false
-
-    static hasOne = [logFileStorageRequest: LogFileStorageRequest]
-    static transients = ['executionState', 'customStatusString', 'userRoles', 'extraMetadataMap', 'serverNodeUUIDChanged', 'execIdForLogStore', 'workflowJsonMap', 'workflowData']
-    static constraints = {
-        importFrom SharedExecutionConstraints
-        importFrom SharedNodeConfigConstraints
-        importFrom SharedServerNodeUuidConstraints
-        project(matches: FrameworkResource.VALID_RESOURCE_NAME_REGEX, validator:{ val, Execution obj->
-            if(obj.scheduledExecution && obj.scheduledExecution.project!=val){
-                return 'job.project.mismatch.error'
-            }
-        })
-        logFileStorageRequest(nullable:true)
-        workflow(nullable:true)
-        workflowJson(nullable:true, blank:true)
-        scheduledExecution(nullable:true)
-        orchestrator(nullable: true)
-        retryExecution(nullable: true)
-        retryOriginalId(nullable: true)
-        retryPrevId(nullable: true)
-        extraMetadata(nullable: true)
-        uuid(nullable: true)
-        jobUuid(nullable: true)
-    }
-
-    static mapping = {
-
-        //mapping overrides superclass, so we need to relist these
-        user column: "rduser"
-        argString type: 'text'
-
-        failedNodeList type: 'text'
-        succeededNodeList type: 'text'
-        outputfilepath type: 'text'
-        nodeInclude(type: 'text')
-        nodeExclude(type: 'text')
-        nodeIncludeName(type: 'text')
-        nodeExcludeName(type: 'text')
-        nodeIncludeTags(type: 'text')
-        nodeExcludeTags(type: 'text')
-        nodeIncludeOsName(type: 'text')
-        nodeExcludeOsName(type: 'text')
-        nodeIncludeOsFamily(type: 'text')
-        nodeExcludeOsFamily(type: 'text')
-        nodeIncludeOsArch(type: 'text')
-        nodeExcludeOsArch(type: 'text')
-        nodeIncludeOsVersion(type: 'text')
-        nodeExcludeOsVersion(type: 'text')
-        filter(type: 'text')
-        timeout( type: 'text')
-        retry( type: 'text')
-        userRoleList(type: 'text')
-        serverNodeUUID(type: 'string')
-        extraMetadata(type: 'text')
-        workflowJson(type: 'text')
-
-        DomainIndexHelper.generate(delegate) {
-            index 'EXEC_IDX_1', ['id', 'project', 'dateCompleted']
-            index 'EXEC_IDX_2', ['dateStarted', 'status']
-            index 'EXEC_IDX_3', ['project', 'dateCompleted']
-            index 'EXEC_IDX_4', ['dateCompleted', 'scheduledExecution']
-            index 'EXEC_IDX_5', ['scheduledExecution', 'status']
-            index 'EXEC_IDX_6', ['user','dateStarted']
-            index 'EXEC_IDX_7', ['serverNodeUUID']
-        }
-    }
-
-    static namedQueries = {
-        isScheduledAdHoc {
-            eq 'status', ExecutionService.EXECUTION_SCHEDULED
-        }
-        withScheduledExecution { se ->
-            eq 'scheduledExecution', se
-        }
-        withServerNodeUUID { uuid ->
-            eq 'serverNodeUUID', uuid
-        }
-        withProject{ project ->
-            eq 'project', project
-        }
-        lastExecutionByUser{ user ->
-            eq 'user', user
-            maxResults 1
-            order 'dateStarted', 'desc'
-        }
-        lastExecutionDateByUser { user ->
-            eq 'user', user
-            projections {
-                property 'dateStarted'
-            }
-            maxResults 1
-            order 'dateStarted', 'desc'
-        }
-    }
-
-    static DetachedCriteria<Execution> runningExecutionsCriteria = new DetachedCriteria<>(Execution).build {
-        isNotNull('dateStarted')
-        isNull('dateCompleted')
-        or {
-            isNull('status')
-            and{
-                ne('status', ExecutionService.EXECUTION_SCHEDULED)
-                ne('status', ExecutionService.EXECUTION_QUEUED)
-            }
-        }
-    }
 
     Serializable getInternalId() {
         return id
@@ -192,6 +130,7 @@ class Execution extends ExecutionContext implements EmbeddedJsonData, ExecutionD
         return logFileStorageRequest?.id
     }
 
+    @Transient
     RdNodeConfig getNodeConfig() {
         new RdNodeConfig(
                 nodeInclude : nodeInclude,
@@ -226,6 +165,7 @@ class Execution extends ExecutionContext implements EmbeddedJsonData, ExecutionD
         return "Workflow execution: ${workflow}"
     }
 
+    @Transient
     Map getExtraMetadataMap() {
         extraMetadata ? asJsonMap(extraMetadata) : [:]
     }
@@ -233,6 +173,7 @@ class Execution extends ExecutionContext implements EmbeddedJsonData, ExecutionD
     /**
      * @return the execution id used to store the log files (might differ from execId since execId changes after imports)
      */
+    @Transient
     Long getExecIdForLogStore(){
         if(!execIdForLogStore) {
             if (isRemoteOutputfilepath()) {
@@ -255,6 +196,7 @@ class Execution extends ExecutionContext implements EmbeddedJsonData, ExecutionD
     /**
      * @return true if the outputfilepath corresponds to a path in a remote storage
      */
+    @Transient
     boolean isRemoteOutputfilepath(){
         return this.outputfilepath?.startsWith(REMOTE_LOG_FILEPATH_PREFIX)
     }
@@ -269,6 +211,7 @@ class Execution extends ExecutionContext implements EmbeddedJsonData, ExecutionD
         setUserRoleList(json)
     }
 
+    @Transient
     public List getUserRoles() {
         if (userRoleList) {
             try {
@@ -284,6 +227,7 @@ class Execution extends ExecutionContext implements EmbeddedJsonData, ExecutionD
         return getExecutionState()==ExecutionService.EXECUTION_SUCCEEDED
     }
 
+    @Transient
     public String getExecutionState() {
         return cancelled ? ExecutionService.EXECUTION_ABORTED :
             (null == dateCompleted && status == ExecutionService.EXECUTION_QUEUED) ? ExecutionService.EXECUTION_QUEUED :
@@ -303,6 +247,7 @@ class Execution extends ExecutionContext implements EmbeddedJsonData, ExecutionD
         return !scheduledExecution || scheduledExecution.hasExecutionEnabled();
     }
 
+    @Transient
     public String getCustomStatusString(){
         executionState==ExecutionService.EXECUTION_STATE_OTHER?status:null
     }
@@ -561,10 +506,6 @@ class Execution extends ExecutionContext implements EmbeddedJsonData, ExecutionD
         )
     }
 
-    void beforeUpdate() {
-        serverNodeUUIDChanged = this.isDirty('serverNodeUUID')
-    }
-
     ExecutionDataSummary toSummary() {
         return new RdExecutionDataSummary(
                 uuid: this.uuid,
@@ -584,6 +525,7 @@ class Execution extends ExecutionContext implements EmbeddedJsonData, ExecutionD
      * Provides backwards compatibility by checking workflow field first.
      * @return WorkflowData instance (either Workflow domain or deserialized from JSON)
      */
+    @Transient
     WorkflowData getWorkflowData() {
         // New format: deserialize from JSON
         if (workflowJson != null) {
@@ -683,6 +625,7 @@ class Execution extends ExecutionContext implements EmbeddedJsonData, ExecutionD
      * Helper to get workflow as a Map (for backward compatibility with existing code).
      * @return Map representation of workflow
      */
+    @Transient
     Map getWorkflowJsonMap() {
         if (workflowJson != null) {
             return asJsonMap(workflowJson)
@@ -691,4 +634,3 @@ class Execution extends ExecutionContext implements EmbeddedJsonData, ExecutionD
     }
 
 }
-

@@ -4,22 +4,33 @@ import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.rundeck.app.data.model.v1.execution.RdJobStats
 
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.Lob
+import jakarta.persistence.Table
+import jakarta.persistence.Transient
+import jakarta.persistence.Version
+
+@Entity
+@Table(name = "scheduled_execution_stats")
 class ScheduledExecutionStats implements RdJobStats {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    Long id
+
+    @Lob
     String content
+
     String jobUuid
 
-    long _version = 0
+    @Version
+    Long version = 0L
 
-//    static belongsTo=[se:ScheduledExecution]
-    static transients = ['contentMap']
-
-    static mapping = {
-        version false
-        _version column: 'version'
-        content type: 'text'
-    }
-
-    public Map getContentMap() {
+    @Transient
+    Map getContentMap() {
         if (null != content) {
             final ObjectMapper objMapper = new ObjectMapper()
             try{
@@ -34,7 +45,7 @@ class ScheduledExecutionStats implements RdJobStats {
     }
 
 
-    public void setContentMap(Map obj) {
+    void setContentMap(Map obj) {
         if (null != obj) {
             final ObjectMapper objMapper = new ObjectMapper()
             content = objMapper.writeValueAsString(obj)
@@ -44,7 +55,7 @@ class ScheduledExecutionStats implements RdJobStats {
     }
 
     Long getVersion(){
-        _version
+        version
     }
 
 }

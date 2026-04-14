@@ -16,48 +16,73 @@
 
 package rundeck
 
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.OneToMany
+import jakarta.persistence.Table
+import jakarta.persistence.Temporal
+import jakarta.persistence.TemporalType
+import jakarta.validation.constraints.Pattern
 import org.rundeck.app.data.model.v1.user.RdUser
-import rundeck.data.validation.validators.AnyDomainEmailValidator
 
-class User implements RdUser{
-    Long id  // Explicit id field required for Hibernate 5.6.15
+@Entity
+@Table(name = "rduser")
+class User implements RdUser {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    Long id
+
+    @Pattern(regexp = '^[a-zA-Z0-9\\p{L}\\p{M}\\.,@\\(\\)\\s_\\\\\'/-]+$')
+    @Column(nullable = false)
     String login
+
+    @Column(nullable = true)
     String password
+
+    @Column(nullable = true)
     String firstName
+
+    @Column(nullable = true)
     String lastName
+
+    @Column(nullable = true)
     String email
+
+    @Temporal(TemporalType.TIMESTAMP)
     Date dateCreated
+
+    @Temporal(TemporalType.TIMESTAMP)
     Date lastUpdated
-    
-    static mapping = {
-        table "rduser"
-        id generator: 'identity'
-    }
+
+    @Column(nullable = true)
     String dashboardPref
+
+    @Column(nullable = true)
     String filterPref
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(nullable = true)
     Date lastLogin
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(nullable = true)
     Date lastLogout
+
+    @Column(nullable = true)
     String lastSessionId
+
+    @Column(nullable = true)
     String lastLoggedHostName
+
+    @OneToMany(mappedBy = "user")
+    Set<AuthToken> authTokens
 
     @Override
     Long getId() {
-        return this.@id  // Direct field access to avoid infinite recursion
-    }
-
-    static constraints={
-        login(matches: '^[a-zA-Z0-9\\p{L}\\p{M}\\.,@\\(\\)\\s_\\\\\'/-]+$')
-        firstName(nullable:true)
-        lastName(nullable:true)
-        email(nullable:true,validator: { val ->
-            (!val || new AnyDomainEmailValidator().isValid(val)) ? null : 'email.invalid'
-        })
-        password(nullable:true)
-        dashboardPref(nullable:true)
-        filterPref(nullable:true)
-        lastLogin(nullable:true)
-        lastLogout(nullable:true)
-        lastSessionId(nullable:true)
-        lastLoggedHostName(nullable:true)
+        return this.@id
     }
 }

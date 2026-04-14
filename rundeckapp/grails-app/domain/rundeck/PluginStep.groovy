@@ -21,6 +21,14 @@ import org.rundeck.core.execution.ExecCommand
 import org.rundeck.core.execution.ScriptCommand
 import org.rundeck.core.execution.ScriptFileCommand
 
+import jakarta.persistence.DiscriminatorValue
+import jakarta.persistence.Entity
+import jakarta.persistence.Lob
+import jakarta.persistence.Transient
+import jakarta.validation.constraints.NotBlank
+
+@Entity
+@DiscriminatorValue("PluginStep")
 class PluginStep extends WorkflowStep{
     public static final List<String> LEGACY_BUILTIN_TYPES = Collections.unmodifiableList(
         [
@@ -30,20 +38,19 @@ class PluginStep extends WorkflowStep{
         ]
     )
     Boolean nodeStep = false
-    String type
-    String jsonData
-    static constraints = {
-        type nullable: false, blank: false
-        jsonData(nullable: true, blank: true)
-        pluginConfigData(nullable: true, blank: true)
-    }
-    //ignore fake property 'configuration' and do not store it
-    static transients = ['configuration']
 
+    @NotBlank
+    String type
+
+    @Lob
+    String jsonData
+
+    @Transient
     public String getPluginType() {
         return type
     }
 
+    @Transient
     public Map getConfiguration() {
         //de-serialize the json
         if (null != jsonData) {
@@ -63,11 +70,6 @@ class PluginStep extends WorkflowStep{
         } else {
             jsonData = null
         }
-    }
-
-    static mapping = {
-        jsonData(type: 'text')
-        pluginConfigData(type: 'text')
     }
 
     static isOldBuiltInType(String type) {
@@ -97,7 +99,7 @@ class PluginStep extends WorkflowStep{
         }
         map
     }
-    
+
     /**
      * Mapping from Job Definition data keys to CommandExec/step plugin properties keys
      */

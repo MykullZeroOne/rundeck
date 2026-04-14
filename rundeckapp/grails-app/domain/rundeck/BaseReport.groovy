@@ -16,50 +16,90 @@
 
 package rundeck
 
-import com.dtolabs.rundeck.app.support.DomainIndexHelper
+import jakarta.persistence.Column
+import jakarta.persistence.DiscriminatorColumn
+import jakarta.persistence.DiscriminatorType
+import jakarta.persistence.DiscriminatorValue
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.Index
+import jakarta.persistence.Inheritance
+import jakarta.persistence.InheritanceType
+import jakarta.persistence.Lob
+import jakarta.persistence.Table
+import jakarta.persistence.Temporal
+import jakarta.persistence.TemporalType
+import jakarta.persistence.Transient
+import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Size
 
+@Entity
+@Table(name = "base_report", indexes = [
+    @Index(name = "EXEC_REPORT_IDX_0", columnList = "ctx_project,dateCompleted"),
+    @Index(name = "EXEC_REPORT_IDX_1", columnList = "ctx_project"),
+    @Index(name = "BASE_REPORT_IDX_2", columnList = "ctx_project,dateCompleted,dateStarted")
+])
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "class", discriminatorType = DiscriminatorType.STRING)
+@DiscriminatorValue("rundeck.BaseReport")
 class BaseReport {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    Long id
+
+    @Column(nullable = true)
     String node
+
+    @Lob
     String title
+
+    @NotNull
+    @Size(max = 256)
+    @Column(nullable = false)
     String status
+
     @Deprecated
+    @NotNull
+    @Size(max = 256)
+    @Column(nullable = false)
     String actionType
+
+    @Column(name = "ctx_project")
     String project
+
     @Deprecated
+    @Column(nullable = true)
     String ctxType
+
     @Deprecated
+    @Column(nullable = true)
     String ctxName
+
     @Deprecated
+    @Column(nullable = true)
     String maprefUri
+
+    @Size(max = 3072)
+    @Column(nullable = true)
     String reportId
+
+    @Column(nullable = true)
     String tags
+
     String author
+
+    @Temporal(TemporalType.TIMESTAMP)
     Date dateStarted
-    Date dateCompleted 
+
+    @Temporal(TemporalType.TIMESTAMP)
+    Date dateCompleted
+
+    @Lob
     String message
 
-    static mapping = {
-        message type: 'text'
-        title type: 'text'
-        project column: 'ctx_project'
-
-        DomainIndexHelper.generate(delegate) {
-            index 'EXEC_REPORT_IDX_0', [/*'class',*/ 'ctxProject', 'dateCompleted', /*'jcExecId', 'jcJobId'*/]
-            index 'EXEC_REPORT_IDX_1', ['ctxProject'/*, 'jcJobId'*/]
-            index 'BASE_REPORT_IDX_2', [/*'class',*/ 'ctxProject', 'dateCompleted', 'dateStarted']
-        }
-    }
-   static constraints = {
-        reportId(nullable:true, maxSize: 1024+2048 /*jobName + groupPath size limitations from ScheduledExecution*/)
-        tags(nullable:true)
-        node(nullable:true)
-        maprefUri(nullable:true)
-        ctxName(nullable:true)
-        ctxType(nullable:true)
-        status(nullable:false, maxSize: 256)
-        actionType(nullable:false, maxSize: 256)
-    }
     public static final ArrayList<String> exportProps = [
             'node',
             'title',
@@ -74,6 +114,7 @@ class BaseReport {
             'dateCompleted'
     ]
 
+    @Transient
     def Map toMap(){
         def map=this.properties.subMap(exportProps)
         if(map.status=='timeout'){
@@ -106,11 +147,5 @@ class BaseReport {
         def BaseReport report = new BaseReport()
         buildFromMap(report, data.subMap(exportProps))
         report
-    }
-
-    static void deleteByProject(String project) {
-        BaseReport.where {
-            project == project
-        }.deleteAll()
     }
 }

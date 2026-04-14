@@ -23,6 +23,12 @@ import org.rundeck.core.execution.ScriptCommand
 import org.rundeck.core.execution.ScriptFileCommand
 import rundeck.data.constants.WorkflowStepConstants
 
+import jakarta.persistence.DiscriminatorValue
+import jakarta.persistence.Entity
+import jakarta.persistence.Lob
+import jakarta.persistence.Transient
+import jakarta.validation.constraints.Size
+
 /*
 * CommandExec.java
 *
@@ -31,30 +37,36 @@ import rundeck.data.constants.WorkflowStepConstants
 * $Id$
 */
 
+@Entity
+@DiscriminatorValue("CommandExec")
 public class CommandExec extends WorkflowStep implements BaseCommandExec {
+
+    @Lob
     String argString
+
+    @Lob
     String adhocRemoteString
+
+    @Lob
     String adhocLocalString
+
+    @Lob
     String adhocFilepath
+
     /**
      * UNUSED
      */
     Boolean adhocExecution = true
+
+    @Lob
     String scriptInterpreter
+
+    @Size(max = 255)
     String fileExtension
+
     Boolean interpreterArgsQuoted
     Boolean expandTokenInScriptFile
-    static transients = ['nodeStep']
 
-    static mapping = {
-        adhocLocalString type: 'text'
-        adhocRemoteString type: 'text'
-        adhocFilepath type: 'text'
-        argString type: 'text'
-        scriptInterpreter type: 'text'
-        fileExtension type: 'text'
-        pluginConfigData(type: 'text')
-    }
     public String toString() {
         StringBuffer sb = new StringBuffer()
         sb << "command( "
@@ -88,20 +100,6 @@ public class CommandExec extends WorkflowStep implements BaseCommandExec {
         return sb.toString()
     }
 
-    static constraints = {
-        argString(nullable: true)
-        adhocRemoteString(nullable:true)
-        adhocLocalString(nullable:true)
-        adhocFilepath(nullable:true)
-        scriptInterpreter(nullable:true)
-        interpreterArgsQuoted(nullable:true)
-        expandTokenInScriptFile(nullable:true)
-        errorHandler(nullable: true)
-        keepgoingOnSuccess(nullable: true)
-        fileExtension(nullable: true, maxSize: 255)
-        pluginConfigData(nullable: true, blank: true)
-    }
-
     public CommandExec createClone(){
         Map properties = new HashMap(this.properties)
         properties.remove('errorHandler')
@@ -109,10 +107,12 @@ public class CommandExec extends WorkflowStep implements BaseCommandExec {
         return ce
     }
 
+    @Transient
     public Map getConfiguration() {
         return WorkflowToRdWorkflowConverter.convertConfiguration(this.toMap())
     }
 
+    @Transient
     public String getPluginType() {
         // Check for != null instead of truthy to preserve type even when strings are empty
         if(adhocRemoteString != null) {
@@ -284,6 +284,7 @@ public class CommandExec extends WorkflowStep implements BaseCommandExec {
         return true;
     }
 
+    @Transient
     public Boolean getNodeStep(){
         return isNodeStep();
     }

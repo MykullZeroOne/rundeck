@@ -29,36 +29,50 @@ import com.fasterxml.jackson.core.JsonParseException
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.rundeck.app.data.model.v1.job.option.OptionData
 import org.rundeck.app.data.model.v1.job.option.OptionValueData
-import rundeck.data.validation.shared.SharedJobOptionConstraints
+
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.Lob
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.PrePersist
+import jakarta.persistence.PreUpdate
+import jakarta.persistence.Table
+import jakarta.persistence.Transient
 
 import java.util.regex.Pattern
 
 /*
  * Option domain class, stores the definition of allowable user inputs for a
  * CLI option for a WOrkflow Job (ScheduledExecution)
- *
- * The name is required, specifying the option name.  The defaultValue is the
- * value selected by default, the values are a set of value options to present.
- *
- * if "enforced" is true, then the chosen input must be one of the allowed values.
- *
- * "valuesUrl" is a URL to point to a REST-ful web endpoint to retrieve the values set from.
- * "regex" can be a regular expression to validate the input. (if enforced is false)
- * 
- * User: Greg Schueler <a href="mailto:greg@dtosolutions.com">greg@dtosolutions.com</a>
- * Created: May 7, 2010 11:15:54 AM
- * $Id$
  */
-
-public class Option implements Comparable, OptionData {
+@Entity
+@Table(name = "option")
+class Option implements Comparable, OptionData {
 
     static final String DEFAULT_DELIMITER =','
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    Long id
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "scheduled_execution_id")
     ScheduledExecution scheduledExecution
+
     String name
     Integer sortIndex
+
+    @Lob
     String description
+
+    @Lob
     String defaultValue
+
     String defaultStoragePath
     Boolean enforced
     Boolean required
@@ -66,42 +80,50 @@ public class Option implements Comparable, OptionData {
     String dateFormat
     URL valuesUrl
     String label
+
     /**
-     * supercedes valuesUrl and allows longer values. 
+     * supercedes valuesUrl and allows longer values.
      */
+    @Column(length = 3000)
     URL valuesUrlLong
+
+    @Lob
     String regex
+
+    @Lob
     String valuesList
+
     String valuesListDelimiter
     Boolean multivalued
     String delimiter
     Boolean secureInput
     Boolean secureExposed
+
+    @Lob
     String optionType
+
+    @Lob
     String configData
+
     Boolean multivalueAllSelected
     String optionValuesPluginType
+
+    @Transient
     List<OptionValue> valuesFromPlugin
+
     Boolean hidden
     Boolean sortValues
+
+    @Transient
     List<String> optionValues
 
-
-    static belongsTo=[scheduledExecution:ScheduledExecution]
-    static transients = ['realValuesUrl', 'configMap','optionConfigData', 'typeFile', 'valuesFromPlugin', 'optionValues']
-
-    static constraints={
-        importFrom SharedJobOptionConstraints
-        valuesUrl(nullable:true)
-        valuesUrlLong(nullable:true)
-        scheduledExecution(nullable:true)
-    }
-
+    @Transient
     List<OptionValueData> getValuesFromPlugin() {
         return valuesFromPlugin
     }
 
-    public Map getConfigMap() {
+    @Transient
+    Map getConfigMap() {
         JobOptionConfigData optionConfigData = getOptionConfigData()
         //de-serialize the json
         if (null != optionConfigData) {
@@ -114,7 +136,7 @@ public class Option implements Comparable, OptionData {
         }
     }
 
-    public void setConfigMap(Map obj) {
+    void setConfigMap(Map obj) {
         //serialize json and store into field
         if (null != obj) {
             JobOptionConfigPluginAttributes configPluginAttributes= new JobOptionConfigPluginAttributes(obj)
@@ -124,7 +146,8 @@ public class Option implements Comparable, OptionData {
         }
     }
 
-    public JobOptionConfigData getOptionConfigData() {
+    @Transient
+    JobOptionConfigData getOptionConfigData() {
         //de-serialize the json
         if (null != configData) {
             final ObjectMapper mapper = new ObjectMapper()
@@ -138,7 +161,7 @@ public class Option implements Comparable, OptionData {
         }
     }
 
-    public void setOptionConfigData(JobOptionConfigData obj) {
+    void setOptionConfigData(JobOptionConfigData obj) {
         //serialize json and store into field
         if (null != obj) {
             final ObjectMapper mapper = new ObjectMapper()
@@ -148,21 +171,10 @@ public class Option implements Comparable, OptionData {
         }
     }
 
-    static mapping = {
-        table "rdoption"
-        valuesUrlLong length:3000
-        description type: 'text'
-        defaultValue type: 'text'
-        regex type: 'text'
-        optionType type: 'text'
-        configData type: 'text'
-        valuesList type: 'text'
-//        values type: 'string'//, lazy: false
-    }
     /**
      * Return canonical map representation
      */
-    public Map toMap(){
+    Map toMap(){
         final Map map = [:]
         if (null != optionType) {
             map.type = optionType
@@ -240,11 +252,12 @@ public class Option implements Comparable, OptionData {
         }
         return map
     }
-    public JobOption toJobOption(){
+
+    JobOption toJobOption(){
         JobOptionImpl.fromOptionMap(toMap())
     }
 
-    public static Option fromMap(String name,Map datain){
+    static Option fromMap(String name,Map datain){
         Option opt = new Option()
         Map data = [:]
         data.putAll(datain)
@@ -314,10 +327,11 @@ public class Option implements Comparable, OptionData {
         opt.valuesList = opt.produceValuesList()
         return opt
     }
+
     /**
      * Return the string equivalent of the values set member
      */
-    public String produceValuesList(){
+    String produceValuesList(){
         if (valuesListDelimiter == null) {
             valuesListDelimiter = DEFAULT_DELIMITER
         }
@@ -329,7 +343,8 @@ public class Option implements Comparable, OptionData {
         }
     }
 
-    def beforeUpdate(){
+    @PreUpdate
+    void beforeUpdate(){
         if (valuesUrl) {
             if (!valuesUrlLong) {
                 this.valuesUrlLong = valuesUrl
@@ -338,7 +353,8 @@ public class Option implements Comparable, OptionData {
         }
     }
 
-    def beforeInsert() {
+    @PrePersist
+    void beforeInsert() {
         if (valuesUrl) {
             if(!valuesUrlLong){
                 this.valuesUrlLong=valuesUrl
@@ -346,13 +362,17 @@ public class Option implements Comparable, OptionData {
             this.valuesUrl = null
         }
     }
-    public URL getRealValuesUrl(){
+
+    @Transient
+    URL getRealValuesUrl(){
         return valuesUrl?:valuesUrlLong
     }
-    public void setRealValuesUrl(URL url){
+
+    void setRealValuesUrl(URL url){
         this.valuesUrl=null
         this.valuesUrlLong=url
     }
+
     /**
      * Convert the valuesList string member into the values set member
      */
@@ -396,6 +416,7 @@ public class Option implements Comparable, OptionData {
         }
     }
 
+    @Transient
     boolean isTypeFile() {
         this.optionType == 'file'
     }
@@ -403,7 +424,7 @@ public class Option implements Comparable, OptionData {
     /**
      * create a clone Option object and set the valuesList string
      */
-    public Option createClone(){
+    Option createClone(){
         Option opt = new Option()
         ['name', 'description', 'defaultValue', 'defaultStoragePath', 'sortIndex', 'enforced', 'required', 'isDate',
          'dateFormat', 'valuesList', 'valuesUrl', 'valuesUrlLong', 'regex', 'multivalued',
@@ -431,6 +452,7 @@ public class Option implements Comparable, OptionData {
         }
     }
 
+    @Transient
     List<String> getOptionValues(){
         if(optionValues==null){
             if(valuesList){
@@ -447,11 +469,12 @@ public class Option implements Comparable, OptionData {
         return null
     }
 
+    @Transient
     JobOptionConfigRemoteUrl getConfigRemoteUrl(){
         return this.getOptionConfigData()?.getJobOptionEntry(JobOptionConfigRemoteUrl.TYPE)
     }
 
-    public String toString ( ) {
+    String toString ( ) {
         return "Option{" +
         "name='" + name + '\'' +
         "sortIndex='" + sortIndex + '\'' +

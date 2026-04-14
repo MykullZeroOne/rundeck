@@ -17,27 +17,49 @@
 package rundeck
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import jakarta.persistence.Entity
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.Lob
+import jakarta.persistence.PrePersist
+import jakarta.persistence.PreUpdate
+import jakarta.persistence.Table
+import jakarta.persistence.Transient
 import org.rundeck.app.data.model.v1.pluginMeta.RdPluginMeta
 
+@Entity
+@Table(name = "plugin_meta")
 class PluginMeta implements RdPluginMeta{
 
-    static constraints = {
-        jsonData(nullable: true, blank: true)
-    }
-    static mapping = {
-        key column: 'data_key'
-        jsonData(type: 'text')
-    }
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     Long id
+
     String key
     String project
+
+    @Lob
     String jsonData
+
     Date dateCreated
     Date lastUpdated
 
-    //ignore fake property 'configuration' and do not store it
-    static transients = ['pluginData']
+    @PrePersist
+    void onPrePersist() {
+        Date now = new Date()
+        if (dateCreated == null) {
+            dateCreated = now
+        }
+        lastUpdated = now
+    }
 
+    @PreUpdate
+    void onPreUpdate() {
+        lastUpdated = new Date()
+    }
+
+    @Transient
     public Map getPluginData() {
         //de-serialize the json
         if (null != jsonData) {
