@@ -45,31 +45,10 @@ See the [Release Notes](https://docs.rundeck.com/docs/history/) for the latest v
 
 Primary build is supported with gradle. More info in the [wiki](https://github.com/rundeck/rundeck/wiki/Building-and-Testing).
 
-Requirements: Java 11, NodeJs 18
+Requirements: Java 25, Node.js 24, npm 10+
 
-## Cloudsmith Authentication Setup
-
-#### For PagerDuty employees with Cloudsmith access
-
-Export your Cloudsmith token before building:
-
-```bash
-export CLOUDSMITH_NPM_TOKEN=your-cloudsmith-token-here
-```
-
-#### For contributors without Cloudsmith access
-
-1. Delete the `.npmrc` and `package-lock.json` files in the ui-trellis package:
-
-```bash
-rm rundeckapp/grails-spa/packages/ui-trellis/.npmrc rundeckapp/grails-spa/packages/ui-trellis/package-lock.json 
-```
-
-2. And the `.npmrc` and `package-lock.json` files in the _package-manager directory:
-
-```bash
-rm rundeckapp/grails-app/assets/javascripts/_package-manager/.npmrc rundeckapp/grails-app/assets/javascripts/_package-manager/package-lock.json
-```
+The open-source build uses public npm packages. Package locks are intentionally
+not committed while the UI dependency graph is being modernized.
 
 ## Build with Gradle
 
@@ -87,8 +66,8 @@ Uses the war artifact and creates the `rundeck/rundeck:SNAPSHOT` docker image:
 
 - `dockerTags` adds additional tags on the image
 -   - Ex: `-PdockerTags=local,local-RUN-123`
-- `jreVersion=openjdk-17-jre-headless` specifies the JRE version for the image
-  - Ex: `-PjreVersion=openjdk-17-jre-headless`
+- `javaRuntimeImage=eclipse-temurin:25-jre-noble` specifies the Java runtime image for the base image
+  - Ex: `-PjavaRuntimeImage=eclipse-temurin:25-jre-noble`
 
 ## Run UI Tests
 

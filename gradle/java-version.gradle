@@ -1,3 +1,28 @@
 apply plugin: 'java'
-sourceCompatibility = JavaVersion.VERSION_17
-targetCompatibility = JavaVersion.VERSION_17
+
+def rundeckJavaToolchainVersion = (findProperty('rundeck.java.toolchainVersion') ?: '25').toString().toInteger()
+def rundeckJavaReleaseVersion = (findProperty('rundeck.java.release') ?: rundeckJavaToolchainVersion.toString()).toString().toInteger()
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(rundeckJavaToolchainVersion)
+    }
+    sourceCompatibility = JavaVersion.toVersion(rundeckJavaReleaseVersion)
+    targetCompatibility = JavaVersion.toVersion(rundeckJavaReleaseVersion)
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = rundeckJavaReleaseVersion
+}
+
+tasks.withType(Test).configureEach {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(rundeckJavaToolchainVersion)
+    }
+}
+
+tasks.withType(JavaExec).configureEach {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(rundeckJavaToolchainVersion)
+    }
+}

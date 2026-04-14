@@ -45,9 +45,7 @@ buildscript {
 }
 
 plugins {
-    id "org.dvaske.gradle.git-build-info" version "0.8"
     id "com.dorongold.task-tree" version "1.5"
-    id "org.ajoberstar.grgit" version "5.2.2"
     id "signing"
     id 'io.github.gradle-nexus.publish-plugin' version "2.0.0"
 }
@@ -143,12 +141,25 @@ if (isTagBuild || ext.environment == 'release') {
     project.ext.resolvedVersion = "${vNum}-SNAPSHOT".toString()
 }
 
-project.ext.branch = grgit.branch.current().name
-project.ext.commit = grgit.head().id
+def gitMetadata = { List<String> args ->
+    providers.exec {
+        workingDir(rootDir)
+        commandLine(['git'] + args)
+        ignoreExitValue = true
+    }.standardOutput.asText.get().trim()
+}
+
+project.ext.branch = gitMetadata(['rev-parse', '--abbrev-ref', 'HEAD'])
+project.ext.commit = gitMetadata(['rev-parse', 'HEAD'])
 
 logger.lifecycle("Building version {}", project.resolvedVersion)
 
 allprojects {
+    ext.gitHead = rootProject.ext.commit
+    ext.gitCommit = rootProject.ext.commit
+    ext.gitBranch = rootProject.ext.branch
+    ext.gitDescribeInfo = gitMetadata(['describe', '--tags', '--always', '--dirty'])
+    ext.gitRemote = gitMetadata(['config', '--get', 'remote.origin.url'])
     version = project.resolvedVersion
     ext["spring.version"] = springVersion
     ext.isReleaseBuild = false
@@ -361,11 +372,6 @@ task alljavadoc(type: Javadoc) {
      if (JavaVersion.current().isJava8Compatible()) {
          options.addStringOption('Xdoclint:none', '-quiet')
      }
-}
-
-buildScan {
-    termsOfServiceUrl = 'https://gradle.com/terms-of-service'
-    termsOfServiceAgree = 'yes'
 }
 
 // Limit heap size in forked test processes for CI

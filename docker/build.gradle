@@ -12,7 +12,8 @@ project.evaluationDependsOn(":rundeckapp")
 
 def dockerRepository = findProperty("dockerRepository")?: 'rundeck/rundeck'
 def providedTags = findProperty('dockerTags')?: ''
-def jreVersion = findProperty("jreVersion")?: 'openjdk-17-jre-headless'
+def javaRuntimeImage = findProperty("javaRuntimeImage")?: 'eclipse-temurin:25-jre-noble'
+def dockerPlatform = findProperty('dockerPlatform') ?: System.getenv('DOCKER_DEFAULT_PLATFORM')
 
 def dockerTags = [].plus(providedTags.split(',').findAll())
 
@@ -71,20 +72,22 @@ tasks.register('officialBuild') {
         def args = [
             "docker",
             "build",
-            "--platform=${findProperty('dockerPlatform') ?: System.getenv('DOCKER_DEFAULT_PLATFORM') ?: 'linux/amd64'}",
             "--label=com.rundeck.version=$resolvedVersion",
             "--label=com.rundeck.commit=$commit"
         ]
+        if (dockerPlatform) {
+            args.add(2, "--platform=$dockerPlatform")
+        }
 
         for (tag in dockerTags)
             args.add("-t=${dockerRepository}:$tag")
 
         args.add(".")
 
-        exec {
-            workingDir "./official"
+        providers.exec {
+            workingDir file("official")
             commandLine args
-        }
+        }.result.get().assertNormalExitValue()
 
         for (tag in dockerTags) {
             file("$outputDir/$tag").createNewFile()
@@ -101,9 +104,9 @@ tasks.register('officialPush') {
     dependsOn officialBuild
     doLast {
         for (tag in dockerTags) {
-            exec {
+            providers.exec {
                 commandLine "docker", "push", "${dockerRepository}:$tag"
-            }
+            }.result.get().assertNormalExitValue()
         }
 
     }
@@ -111,10 +114,14 @@ tasks.register('officialPush') {
 
 tasks.register('buildUbuntuBase') {
     doLast {
-        exec {
-            workingDir "./ubuntu-base"
-            commandLine "docker", "build", "--build-arg", "JRE_VERSION=$jreVersion", "-t=rundeck/ubuntu-base", "."
-        }
+        providers.exec {
+            workingDir file("ubuntu-base")
+            def args = ["docker", "build", "--build-arg", "JAVA_RUNTIME_IMAGE=$javaRuntimeImage", "-t=rundeck/ubuntu-base", "."]
+            if (dockerPlatform) {
+                args.add(2, "--platform=$dockerPlatform")
+            }
+            commandLine args
+        }.result.get().assertNormalExitValue()
     }
 }
 officialBuild.dependsOn buildUbuntuBase
@@ -122,8 +129,8 @@ officialBuild.dependsOn buildUbuntuBase
 tasks.register('pushUbuntuBase') {
     dependsOn buildUbuntuBase
     doLast {
-        exec {
+        providers.exec {
             commandLine "docker", "push", "rundeck/ubuntu-base"
-        }
+        }.result.get().assertNormalExitValue()
     }
 }

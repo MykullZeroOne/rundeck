@@ -1,8 +1,7 @@
 
 set RDECK_BASE=/home/rundeck
 
-REM Grails 7: Java 17 required
-set JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+if "%JAVA_HOME%"=="" set JAVA_HOME=/opt/java/openjdk
 
 :: Unsetting JRE_HOME to ensure there is no conflict with JAVA_HOME
 (set JRE_HOME=)

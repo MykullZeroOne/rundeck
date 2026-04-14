@@ -15,7 +15,6 @@
  */
 
 plugins {
-    id "org.dvaske.gradle.git-build-info"
     id "java-library"
     id 'com.github.gmazzo.buildconfig' version '3.0.3'
 
@@ -27,13 +26,14 @@ import java.text.SimpleDateFormat
  **/
 evaluationDependsOn(':rundeck-storage')
 apply plugin: 'idea'
-apply plugin: "org.dvaske.gradle.git-build-info"
 apply plugin: 'signing'
 apply plugin: 'java-library'
 
 description = 'The Rundeck Core API project'
 
-archivesBaseName = 'rundeck-core'
+base {
+    archivesName = 'rundeck-core'
+}
 defaultTasks 'clean'
 apply plugin: "groovy"
 
@@ -180,7 +180,7 @@ test{
     systemProperties 'rdeck.base': "$projectDir/build/rdeck_base"
     useJUnitPlatform()
     
-    // Java 17 + CGLIB/Spock: Open modules for mocking
+    // CGLIB/Spock still needs module access for mocking on modern Java.
     jvmArgs = [
         '--add-opens=java.base/java.lang=ALL-UNNAMED',
         '--add-opens=java.base/java.io=ALL-UNNAMED',

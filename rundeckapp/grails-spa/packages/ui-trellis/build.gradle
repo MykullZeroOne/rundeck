@@ -36,7 +36,6 @@ def sources = sourceDirs + sourceFiles
 
 def runNpmBuild = tasks.register('runNpmBuild', NpmTask) {
     it.inputs.file 'package.json'
-    it.inputs.file 'package-lock.json'
     it.inputs.file 'vue.config.library.js'
     it.inputs.file 'tsconfig.json'
 
@@ -51,12 +50,6 @@ def runNpmBuild = tasks.register('runNpmBuild', NpmTask) {
 
     args = ['run', npmCommand]
 
-    execOverrides {
-        def token = project.findProperty('CLOUDSMITH_NPM_TOKEN') ?: System.getenv('CLOUDSMITH_NPM_TOKEN')
-        if (token) {
-            it.environment('CLOUDSMITH_NPM_TOKEN', token)
-        }
-    }
 }
 
 /** Takes package.json and sets the version in it */
@@ -198,7 +191,6 @@ assemble.dependsOn runNpmBuild
 tasks.register('runNpmTest', NpmTask) {
     group = 'test'
     inputs.file 'package.json'
-    inputs.file 'package-lock.json'
 
     inputs.dir 'src'
     inputs.dir 'tests'
@@ -209,12 +201,6 @@ tasks.register('runNpmTest', NpmTask) {
 
     args = ['run', npmCommand]
 
-    execOverrides {
-        def token = project.findProperty('CLOUDSMITH_NPM_TOKEN') ?: System.getenv('CLOUDSMITH_NPM_TOKEN')
-        if (token) {
-            it.environment('CLOUDSMITH_NPM_TOKEN', token)
-        }
-    }
 }
 //check.dependsOn runNpmTest
 

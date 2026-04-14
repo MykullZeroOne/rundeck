@@ -29,7 +29,9 @@ subprojects{
     apply from: "../../gradle/java-version.gradle"
 
     defaultTasks 'clean','build'
-    archivesBaseName = "rundeck-$project.name"
+    base {
+        archivesName = "rundeck-$project.name"
+    }
 
     dependencies {
         implementation project(":core")

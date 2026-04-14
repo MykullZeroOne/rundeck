@@ -29,7 +29,7 @@ class PluginMetadataValidatorTest extends Specification {
     def "ValidateTargetHostCompatibility"() {
         when:
         def errors = []
-        // Groovy 4/Java 17: Direct field access without modifying final modifier
+        // Direct field access avoids modifying final metadata under modern Java.
         Field field = PluginMetadataValidator.getDeclaredField("OS_TYPE")
         field.setAccessible(true)
         field.set(null, rundeckHost)
